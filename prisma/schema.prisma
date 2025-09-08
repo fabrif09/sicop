@@ -1,0 +1,64 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  PROF
+  ALUMNO
+}
+
+enum Estado {
+  PROPUESTO
+  APROBADO
+  RECHAZADO
+}
+
+enum DocTipo {
+  PROPUESTA
+  PDF_FINAL
+  OTRO
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  nombre    String
+  role      Role     @default(ALUMNO)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Proyecto {
+  id              String      @id @default(cuid())
+  titulo          String
+  descripcion     String
+  funcionalidades String[]    // se guarda como text[] en Postgres
+  alumnoNombre    String
+  alumnoEmail     String
+  anio            Int
+  cuatrimestre    Int
+  estado          Estado      @default(PROPUESTO)
+  textoIndexado   String
+  checksumPdf     String?     @unique
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  documentos      Documento[]
+}
+
+model Documento {
+  id         String    @id @default(cuid())
+  proyecto   Proyecto  @relation(fields: [proyectoId], references: [id], onDelete: Cascade)
+  proyectoId String
+  tipo       DocTipo
+  url        String
+  mime       String
+  size       Int
+  version    Int       @default(1)
+  createdAt  DateTime  @default(now())
+}
