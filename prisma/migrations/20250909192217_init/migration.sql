@@ -12,6 +12,7 @@ CREATE TABLE "public"."User" (
     "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "nombre" TEXT NOT NULL,
+    "passwordHash" TEXT NOT NULL,
     "role" "public"."Role" NOT NULL DEFAULT 'ALUMNO',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -28,7 +29,7 @@ CREATE TABLE "public"."Proyecto" (
     "alumnoNombre" TEXT NOT NULL,
     "alumnoEmail" TEXT NOT NULL,
     "anio" INTEGER NOT NULL,
-    "cuatrimestre" INTEGER NOT NULL,
+    "fechaCarga" TIMESTAMP(3) NOT NULL,
     "estado" "public"."Estado" NOT NULL DEFAULT 'PROPUESTO',
     "textoIndexado" TEXT NOT NULL,
     "checksumPdf" TEXT,
@@ -60,3 +61,10 @@ CREATE UNIQUE INDEX "Proyecto_checksumPdf_key" ON "public"."Proyecto"("checksumP
 
 -- AddForeignKey
 ALTER TABLE "public"."Documento" ADD CONSTRAINT "Documento_proyectoId_fkey" FOREIGN KEY ("proyectoId") REFERENCES "public"."Proyecto"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- Extensión trigram (DB real y shadow DB)
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+-- Índice trigram para búsquedas difusas
+CREATE INDEX IF NOT EXISTS "Proyecto_textoIndexado_trgm_idx"
+ON "Proyecto" USING GIN ("textoIndexado" gin_trgm_ops);

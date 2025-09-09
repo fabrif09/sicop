@@ -39,16 +39,16 @@ model Proyecto {
   id              String      @id @default(cuid())
   titulo          String
   descripcion     String
-  funcionalidades String[]    // se guarda como text[] en Postgres
+  funcionalidades String[]
   alumnoNombre    String
   alumnoEmail     String
   anio            Int
-  cuatrimestre    Int
-  estado          Estado      @default(PROPUESTO)
+  fechaCarga      DateTime     
+  estado          Estado       @default(PROPUESTO)
   textoIndexado   String
-  checksumPdf     String?     @unique
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  checksumPdf     String?      @unique
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
   documentos      Documento[]
 }
 
