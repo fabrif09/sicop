@@ -15,6 +15,7 @@ export default async function DashboardPage() {
           <p><b>Usuario:</b> {session.user.email}</p>
           <p><b>Nombre:</b> {session.user.name}</p>
           <p><b>Rol:</b> {(session.user as any).role}</p>
+          <Link className="underline mr-3" href="/proyectos">Ver proyectos</Link>
           <Link className="underline" href="/proyectos/nuevo">Crear proyecto</Link>
           <LogoutBtn />
         </div>
