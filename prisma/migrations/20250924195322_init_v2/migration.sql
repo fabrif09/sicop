@@ -7,6 +7,9 @@ CREATE TYPE "public"."Estado" AS ENUM ('PROPUESTO', 'APROBADO', 'RECHAZADO');
 -- CreateEnum
 CREATE TYPE "public"."DocTipo" AS ENUM ('PROPUESTA', 'PDF_FINAL', 'OTRO');
 
+-- CreateEnum
+CREATE TYPE "public"."AuditAction" AS ENUM ('CREAR_PROYECTO', 'APROBAR_PROYECTO', 'RECHAZAR_PROYECTO', 'SUBIR_PDF', 'EDITAR_PROYECTO', 'BORRAR_PROYECTO', 'DESCARGAR_PDF');
+
 -- CreateTable
 CREATE TABLE "public"."User" (
     "id" TEXT NOT NULL,
@@ -35,6 +38,9 @@ CREATE TABLE "public"."Proyecto" (
     "checksumPdf" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "ownerId" TEXT NOT NULL,
+    "aprobadoPorId" TEXT,
+    "aprobadoEn" TIMESTAMP(3),
 
     CONSTRAINT "Proyecto_pkey" PRIMARY KEY ("id")
 );
@@ -49,8 +55,21 @@ CREATE TABLE "public"."Documento" (
     "size" INTEGER NOT NULL,
     "version" INTEGER NOT NULL DEFAULT 1,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "uploadedById" TEXT NOT NULL,
 
     CONSTRAINT "Documento_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."AuditLog" (
+    "id" TEXT NOT NULL,
+    "action" "public"."AuditAction" NOT NULL,
+    "userId" TEXT NOT NULL,
+    "proyectoId" TEXT,
+    "metadata" JSONB,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "AuditLog_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -60,11 +79,25 @@ CREATE UNIQUE INDEX "User_email_key" ON "public"."User"("email");
 CREATE UNIQUE INDEX "Proyecto_checksumPdf_key" ON "public"."Proyecto"("checksumPdf");
 
 -- AddForeignKey
+ALTER TABLE "public"."Proyecto" ADD CONSTRAINT "Proyecto_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "public"."User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."Proyecto" ADD CONSTRAINT "Proyecto_aprobadoPorId_fkey" FOREIGN KEY ("aprobadoPorId") REFERENCES "public"."User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "public"."Documento" ADD CONSTRAINT "Documento_proyectoId_fkey" FOREIGN KEY ("proyectoId") REFERENCES "public"."Proyecto"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
--- Extensión trigram (DB real y shadow DB)
+-- AddForeignKey
+ALTER TABLE "public"."Documento" ADD CONSTRAINT "Documento_uploadedById_fkey" FOREIGN KEY ("uploadedById") REFERENCES "public"."User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."AuditLog" ADD CONSTRAINT "AuditLog_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."AuditLog" ADD CONSTRAINT "AuditLog_proyectoId_fkey" FOREIGN KEY ("proyectoId") REFERENCES "public"."Proyecto"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- Extensión e índice trigram para búsquedas por similitud
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
--- Índice trigram para búsquedas difusas
 CREATE INDEX IF NOT EXISTS "Proyecto_textoIndexado_trgm_idx"
-ON "Proyecto" USING GIN ("textoIndexado" gin_trgm_ops);
+ON "public"."Proyecto" USING GIN ("textoIndexado" gin_trgm_ops);

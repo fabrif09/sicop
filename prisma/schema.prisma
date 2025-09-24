@@ -33,6 +33,11 @@ model User {
   role          Role     @default(ALUMNO)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  proyectos    Proyecto[]        @relation("OwnerProyectos")   // dueño (alumno)
+  aprobaciones Proyecto[]        @relation("AprobadorProyectos")
+  documentos   Documento[]       @relation("UploaderDocs")
+  logs         AuditLog[]
 }
 
 model Proyecto {
@@ -44,12 +49,23 @@ model Proyecto {
   alumnoEmail     String
   anio            Int
   fechaCarga      DateTime     
-  estado          Estado       @default(PROPUESTO)
+  estado          Estado       @default(APROBADO)
   textoIndexado   String
   checksumPdf     String?      @unique
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
+
+    // NUEVO: dueño alumno que creó la propuesta
+  ownerId         String
+  owner           User        @relation("OwnerProyectos", fields: [ownerId], references: [id])
+
+  // NUEVO: quién la aprobó y cuándo
+  aprobadoPorId   String?
+  aprobadoPor     User?       @relation("AprobadorProyectos", fields: [aprobadoPorId], references: [id])
+  aprobadoEn      DateTime?
+
   documentos      Documento[]
+  logs            AuditLog[]
 }
 
 model Documento {
@@ -62,4 +78,30 @@ model Documento {
   size       Int
   version    Int       @default(1)
   createdAt  DateTime  @default(now())
+
+  // NUEVO: quién subió el PDF
+  uploadedById String
+  uploadedBy   User   @relation("UploaderDocs", fields: [uploadedById], references: [id])
+}
+
+// NUEVO: tabla de auditoría
+enum AuditAction {
+  CREAR_PROYECTO
+  APROBAR_PROYECTO
+  RECHAZAR_PROYECTO
+  SUBIR_PDF
+  EDITAR_PROYECTO
+  BORRAR_PROYECTO
+  DESCARGAR_PDF
+}
+
+model AuditLog {
+  id         String      @id @default(cuid())
+  action     AuditAction
+  userId     String
+  user       User        @relation(fields: [userId], references: [id])
+  proyectoId String?
+  proyecto   Proyecto?   @relation(fields: [proyectoId], references: [id])
+  metadata   Json?
+  createdAt  DateTime    @default(now())
 }
