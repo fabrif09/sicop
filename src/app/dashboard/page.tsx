@@ -12,6 +12,7 @@ export default async function DashboardPage() {
         <p>No hay sesión. <Link className="underline" href="/login">Ir a login</Link></p>
       ) : (
         <div className="space-y-1">
+          <h2 className="text-lg font-semibold">Datos de sesión:</h2>
           <p><b>Usuario:</b> {session.user.email}</p>
           <p><b>Nombre:</b> {session.user.name}</p>
           <p><b>Rol:</b> {(session.user as any).role}</p>

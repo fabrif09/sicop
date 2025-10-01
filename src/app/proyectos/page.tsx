@@ -1,18 +1,37 @@
+// src/app/proyectos/page.tsx
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import { buscarProyectos } from './actions';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+// Si preferís redirigir en vez de mostrar mensaje:
+// import { redirect } from 'next/navigation';
 
 type Search = { searchParams: Promise<{ anio?: string; q?: string; umbral?: string }> };
 
 export default async function ProyectosPage({ searchParams }: Search) {
+  // 🔒 Doble chequeo de rol (además del middleware)
+  const session = await getServerSession(authOptions);
+  const role = (session?.user as any)?.role as 'ADMIN' | 'PROF' | 'ALUMNO' | undefined;
+
+  if (!role || !['ADMIN', 'PROF'].includes(role)) {
+    // Si preferís redirigir al “Mi proyecto”:
+    // redirect('/mi-proyecto');
+    return (
+      <main className="p-6">
+        <h1 className="text-xl font-semibold">No autorizado</h1>
+        <p className="text-gray-600">Esta sección es solo para la cátedra.</p>
+      </main>
+    );
+  }
+
   const sp = await searchParams;
   const anio = sp?.anio ? Number(sp.anio) : undefined;
   const q = (sp?.q ?? '').trim();
   const umbral = sp?.umbral ? Number(sp.umbral) : undefined;
 
   let proyectos:
-    | { id: string; titulo: string; alumnoNombre: string; fechaCarga: Date; anio: number; score?: number }[]
-    = [];
+    | { id: string; titulo: string; alumnoNombre: string; fechaCarga: Date; anio: number; score?: number }[] = [];
 
   if (q) {
     proyectos = await buscarProyectos({ q, umbral: umbral ?? 0.30, limit: 50 });
@@ -47,7 +66,6 @@ export default async function ProyectosPage({ searchParams }: Search) {
           placeholder="Año"
           defaultValue={Number.isFinite(anio) ? anio : ''}
         />
-        {/* Umbral visible solo si hay búsqueda */}
         {q && (
           <label className="text-sm text-gray-600 flex items-center gap-2">
             Umbral
@@ -76,9 +94,7 @@ export default async function ProyectosPage({ searchParams }: Search) {
               <Link className="font-medium underline" href={`/proyectos/${p.id}`}>{p.titulo}</Link>
               <div className="text-sm text-gray-600">
                 Alumno: {p.alumnoNombre} — Año: {p.anio} — Fecha: {new Date(p.fechaCarga).toISOString().slice(0,10)}
-                {typeof (p as any).score === 'number' && (
-                  <> — Score: {(p as any).score.toFixed(2)}</>
-                )}
+                {typeof (p as any).score === 'number' && <> — Score: {(p as any).score.toFixed(2)}</>}
               </div>
             </div>
             <Link className="text-sm underline" href={`/proyectos/${p.id}`}>Ver</Link>

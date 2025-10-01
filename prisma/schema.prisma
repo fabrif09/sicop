@@ -31,10 +31,13 @@ model User {
   nombre        String
   passwordHash  String
   role          Role     @default(ALUMNO)
+  isActive      Boolean  @default(false)     //  agregado
+  requestedAt   DateTime @default(now())     //  agregado (audit)
+  approvedAt    DateTime?                    //  agregado (audit)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  proyectos    Proyecto[]        @relation("OwnerProyectos")   // dueño (alumno)
+  proyectos    Proyecto[]        @relation("OwnerProyectos")
   aprobaciones Proyecto[]        @relation("AprobadorProyectos")
   documentos   Documento[]       @relation("UploaderDocs")
   logs         AuditLog[]

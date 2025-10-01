@@ -10,32 +10,50 @@ export const authOptions: NextAuthOptions = {
   providers: [
     Credentials({
       name: 'Credentials',
-      credentials: {
-        email: { label: 'Email', type: 'text' },
-        password: { label: 'Password', type: 'password' },
-      },
+      credentials: { email: { label: 'Email' }, password: { label: 'Password', type: 'password' } },
       async authorize(creds) {
-        if (!creds?.email || !creds?.password) return null;
-        const user = await prisma.user.findUnique({ where: { email: creds.email } });
-        if (!user || !user.passwordHash) return null;
+        if (!creds?.email || !creds?.password) {
+          throw new Error('Email o contraseña incorrectos');
+        }
+
+        const user = await prisma.user.findUnique({
+          where: { email: creds.email },
+          select: {
+            id: true,
+            email: true,
+            nombre: true,
+            role: true,
+            passwordHash: true,
+            isActive: true,
+          },
+        });
+
+        if (!user || !user.passwordHash) {
+          throw new Error('Email o contraseña incorrectos');
+        }
+
+        if (!user.isActive) {
+          throw new Error('Tu cuenta aún no fue activada por un profesor/admin');
+        }
+
         const ok = await bcrypt.compare(creds.password, user.passwordHash);
-        if (!ok) return null;
-        // devolvemos id y role para que el JWT los capture
+        if (!ok) {
+          throw new Error('Email o contraseña incorrectos');
+        }
+
         return { id: user.id, email: user.email, name: user.nombre, role: user.role } as any;
       },
     }),
   ],
   callbacks: {
     async jwt({ token, user }) {
-      // al iniciar sesión, user viene con id/role -> los guardamos en el token
       if (user) {
-        token.sub = (user as any).id;         // <-- id estándar en JWT
+        token.sub = (user as any).id;
         (token as any).role = (user as any).role;
       }
       return token;
     },
     async session({ session, token }) {
-      // copiamos id/role del JWT a la session para leerlos en server actions
       if (session.user) {
         (session.user as any).id = token.sub as string;
         (session.user as any).role = (token as any).role as any;
