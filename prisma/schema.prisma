@@ -22,69 +22,82 @@ enum Estado {
 enum DocTipo {
   PROPUESTA
   PDF_FINAL
+  PRESENTACION // NUEVO
   OTRO
 }
 
 model User {
-  id            String   @id @default(cuid())
-  email         String   @unique
-  nombre        String
-  passwordHash  String
-  role          Role     @default(ALUMNO)
-  isActive      Boolean  @default(false)     //  agregado
-  requestedAt   DateTime @default(now())     //  agregado (audit)
-  approvedAt    DateTime?                    //  agregado (audit)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           String    @id @default(cuid())
+  email        String    @unique
+  nombre       String
+  passwordHash String
+  role         Role      @default(ALUMNO)
+  isActive     Boolean   @default(false)
+  requestedAt  DateTime  @default(now())
+  approvedAt   DateTime?
+  // --- NUEVOS ---
+  celular      String?
+  dni          String?   @unique
+  fechaRindio  DateTime?
+  nota         Int?
+  egresado     Boolean   @default(false)
+  // --------------
 
-  proyectos    Proyecto[]        @relation("OwnerProyectos")
-  aprobaciones Proyecto[]        @relation("AprobadorProyectos")
-  documentos   Documento[]       @relation("UploaderDocs")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  proyectos    Proyecto[]  @relation("OwnerProyectos")
+  aprobaciones Proyecto[]  @relation("AprobadorProyectos")
+  documentos   Documento[] @relation("UploaderDocs")
   logs         AuditLog[]
+
+  materialesSubidos MaterialCatedra[] @relation("UploaderMateriales")
 }
 
 model Proyecto {
-  id              String      @id @default(cuid())
+  id              String   @id @default(cuid())
   titulo          String
   descripcion     String
   funcionalidades String[]
   alumnoNombre    String
   alumnoEmail     String
   anio            Int
-  fechaCarga      DateTime     
-  estado          Estado       @default(APROBADO)
+  fechaCarga      DateTime
+  estado          Estado   @default(PROPUESTO)
   textoIndexado   String
-  checksumPdf     String?      @unique
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  checksumPdf     String?  @unique
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-    // NUEVO: dueño alumno que creó la propuesta
-  ownerId         String
-  owner           User        @relation("OwnerProyectos", fields: [ownerId], references: [id])
+  // NUEVO: dueño alumno que creó la propuesta
+  ownerId         String   @unique
+  owner           User     @relation("OwnerProyectos", fields: [ownerId], references: [id])
 
   // NUEVO: quién la aprobó y cuándo
   aprobadoPorId   String?
-  aprobadoPor     User?       @relation("AprobadorProyectos", fields: [aprobadoPorId], references: [id])
+  aprobadoPor     User?    @relation("AprobadorProyectos", fields: [aprobadoPorId], references: [id])
   aprobadoEn      DateTime?
 
-  documentos      Documento[]
-  logs            AuditLog[]
+  documentos Documento[]
+  logs       AuditLog[]
 }
 
 model Documento {
-  id         String    @id @default(cuid())
-  proyecto   Proyecto  @relation(fields: [proyectoId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  proyecto   Proyecto @relation(fields: [proyectoId], references: [id], onDelete: Cascade)
   proyectoId String
   tipo       DocTipo
   url        String
   mime       String
   size       Int
-  version    Int       @default(1)
-  createdAt  DateTime  @default(now())
+  version    Int      @default(1)
+  createdAt  DateTime @default(now())
 
-  // NUEVO: quién subió el PDF
   uploadedById String
   uploadedBy   User   @relation("UploaderDocs", fields: [uploadedById], references: [id])
+
+  // ÚNICO por proyecto+tipo+versión (evita duplicados accidentales)
+  @@unique([proyectoId, tipo, version])
 }
 
 // NUEVO: tabla de auditoría
@@ -107,4 +120,21 @@ model AuditLog {
   proyecto   Proyecto?   @relation(fields: [proyectoId], references: [id])
   metadata   Json?
   createdAt  DateTime    @default(now())
+}
+
+model MaterialCatedra {
+  id          String  @id @default(cuid())
+  titulo      String
+  descripcion String?
+  categoria   String?
+  key         String  @unique
+  mime        String
+  size        Int
+  version     Int     @default(1)
+
+  uploadedById String
+  uploadedBy   User   @relation("UploaderMateriales", fields: [uploadedById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
