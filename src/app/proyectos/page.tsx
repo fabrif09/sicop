@@ -32,18 +32,19 @@ export default async function ProyectosPage({ searchParams }: Search) {
 
   type Row = { id: string; titulo: string; alumnoNombre: string; fechaCarga: Date; anio: number; score?: number };
 
-  // 🔹 Proyectos pendientes (arriba de todo)
+  //  Proyectos pendientes (arriba de todo)
   const pendientes = await prisma.proyecto.findMany({
-    where: { estado: 'PROPUESTO' as any },
+    where: { estado: 'PROPUESTO' as any, isActive: true }, // ⬅️ NUEVO
     orderBy: { createdAt: 'asc' },
     select: { id: true, titulo: true, alumnoNombre: true, fechaCarga: true },
   });
+
 
   let proyectos: Row[] = [];
   let total = 0;
 
   if (q) {
-    // 🔎 Búsqueda con trigram + ILIKE, paginada — solo APROBADOS
+    //  Búsqueda con trigram + ILIKE, paginada — solo APROBADOS
     const texto = buildTextoIndexado(q, '', []);
 
     // total
@@ -51,6 +52,7 @@ export default async function ProyectosPage({ searchParams }: Search) {
       SELECT COUNT(*)::int AS count
       FROM "Proyecto" AS p
       WHERE p."estado" = 'APROBADO'
+        AND p.isActive = true
         AND (
           (p."textoIndexado" % ${texto} AND similarity(p."textoIndexado", ${texto}) >= ${umbral})
           OR (p."titulo" ILIKE ${'%' + q + '%'})
@@ -64,6 +66,7 @@ export default async function ProyectosPage({ searchParams }: Search) {
              similarity(p."textoIndexado", ${texto}) AS score
       FROM "Proyecto" AS p
       WHERE p."estado" = 'APROBADO'
+        AND p.isActive = true
         AND (
           (p."textoIndexado" % ${texto} AND similarity(p."textoIndexado", ${texto}) >= ${umbral})
           OR (p."titulo" ILIKE ${'%' + q + '%'})
@@ -72,10 +75,10 @@ export default async function ProyectosPage({ searchParams }: Search) {
       LIMIT ${perPage} OFFSET ${offset};
     `;
   } else {
-    // 📄 Listado simple por año (si lo pasan), paginado — solo APROBADOS
+    //  Listado simple por año (si lo pasan), paginado — solo APROBADOS
     const where = Number.isFinite(anio)
-      ? { anio, estado: 'APROBADO' as any }
-      : { estado: 'APROBADO' as any };
+      ? { anio, estado: 'APROBADO' as any, isActive: true }
+      : { estado: 'APROBADO' as any, isActive: true };
 
     total = await prisma.proyecto.count({ where });
     proyectos = await prisma.proyecto.findMany({

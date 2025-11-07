@@ -12,7 +12,7 @@ export default async function Header() {
   // datos para badges
   const [pendingUsers, pendingPropuestas] = await Promise.all([
     prisma.user.count({ where: { isActive: false } }),
-    prisma.proyecto.count({ where: { estado: 'PROPUESTO' } }),
+    prisma.proyecto.count({ where: { estado: 'PROPUESTO', isActive: true } }), // ⬅️ solo propuestas ACTIVAS
   ]);
 
   // Armamos las entradas de navegación según rol

@@ -364,7 +364,7 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
                     </td>
                     <td className="p-3 whitespace-nowrap">
                       {u.fechaRindio
-                        ? u.fechaRindio.toISOString().slice(0, 10)
+                        ? new Date(u.fechaRindio).toLocaleDateString('es-AR')
                         : '-'}
                     </td>
                     <td className="p-3 whitespace-nowrap">

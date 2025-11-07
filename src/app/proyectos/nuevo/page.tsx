@@ -21,12 +21,14 @@ export default async function NuevoProyectoPage() {
 
   // Solo ALUMNO puede crear
   if (user.role !== 'ALUMNO') {
-    // podés mandarlo al dashboard si preferís
     redirect('/');
   }
 
-  // ¿Ya tiene proyecto?
-  const yaTiene = await prisma.proyecto.count({ where: { ownerId: user.id } });
+  // ¿Ya tiene proyecto ACTIVO? (soft-delete friendly)
+  const yaTiene = await prisma.proyecto.count({
+    where: { ownerId: user.id, isActive: true }, // 👈 solo activos
+  });
+
   if (yaTiene > 0) {
     // redirige con mensaje (lo leemos en /mi-proyecto)
     redirect('/mi-proyecto?m=ya_tenes_proyecto');

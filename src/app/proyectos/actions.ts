@@ -49,6 +49,25 @@ async function log(action: string, userId: string, proyectoId?: string, metadata
   });
 }
 
+async function crearComentarioProyecto(input: {
+  proyectoId: string;
+  autorId: string;
+  tipo: 'APROBACION' | 'RECHAZO' | 'FEEDBACK';
+  texto: string;
+}) {
+  // texto opcional: si viene vacío, no creamos nada
+  if (!input.texto?.trim()) return;
+  await prisma.proyectoComentario.create({
+    data: {
+      proyectoId: input.proyectoId,
+      autorId: input.autorId,
+      tipo: input.tipo as any,
+      texto: input.texto.trim(),
+    },
+  });
+}
+
+
 /* ===================== búsqueda ===================== */
 
 // Búsqueda difusa para staff
@@ -109,10 +128,12 @@ export async function createProyecto(input: {
     throw new Error('Solo los alumnos pueden crear proyectos.');
   }
 
-  // ⬇️ Verificar que no tenga ya un proyecto
-  const yaTiene = await prisma.proyecto.count({ where: { ownerId: userId } });
-  if (yaTiene > 0) {
-    throw new Error('Ya tenés un proyecto creado.');
+  // ⬇️ Verificar que no tenga ya un proyecto ACTIVO
+  const yaTieneActivo = await prisma.proyecto.count({
+    where: { ownerId: userId, isActive: true },
+  });
+  if (yaTieneActivo > 0) {
+    throw new Error('Ya tenés un proyecto activo.');
   }
 
   if (!input.titulo?.trim() || !input.descripcion?.trim()) throw new Error('Título y descripción son obligatorios');
@@ -227,8 +248,14 @@ export async function setProyectoChecksum(input: { proyectoId: string; checksum:
 }
 
 export async function updateProyecto(input: {
-  id: string; titulo: string; descripcion: string; funcionalidades: string[];
-  alumnoNombre: string; alumnoEmail: string; anio: number; fechaCarga: string;
+  id: string;
+  titulo: string;
+  descripcion: string;
+  funcionalidades: string[];
+  alumnoNombre: string;
+  alumnoEmail: string;
+  anio: number;
+  fechaCarga: string;
   estado?: 'PROPUESTO' | 'APROBADO' | 'RECHAZADO';
 }) {
   await requireProfOrAdmin();
@@ -238,7 +265,19 @@ export async function updateProyecto(input: {
   const fecha = new Date(input.fechaCarga);
   if (Number.isNaN(fecha.getTime())) throw new Error('Fecha inválida');
 
-  const textoIndexado = buildTextoIndexado(input.titulo, input.descripcion, input.funcionalidades);
+  const textoIndexado = buildTextoIndexado(
+    input.titulo,
+    input.descripcion,
+    input.funcionalidades
+  );
+
+  // Si viene un estado, derivamos isActive según la regla de negocio
+  const estadoData = input.estado
+    ? {
+        estado: input.estado as any,
+        isActive: input.estado === 'RECHAZADO' ? false : true,
+      }
+    : {};
 
   await prisma.proyecto.update({
     where: { id: input.id },
@@ -251,7 +290,7 @@ export async function updateProyecto(input: {
       anio: input.anio,
       fechaCarga: fecha,
       textoIndexado,
-      ...(input.estado ? { estado: input.estado as any } : {}),
+      ...estadoData,
     },
   });
 
@@ -267,7 +306,7 @@ export async function deleteProyecto(input: { proyectoId: string }) {
 
 /* ===================== aprobar / rechazar ===================== */
 
-export async function aprobarProyecto(proyectoId: string) {
+export async function aprobarProyecto(proyectoId: string, comentario?: string) {
   await requireProfOrAdmin();
   const session = await getServerSession(authOptions);
   const aprobadorId = (session?.user as any)?.id as string;
@@ -282,10 +321,19 @@ export async function aprobarProyecto(proyectoId: string) {
     select: { id: true },
   });
 
+  // 💬 guardar comentario si vino
+  await crearComentarioProyecto({
+    proyectoId,
+    autorId: aprobadorId,
+    tipo: 'APROBACION',
+    texto: comentario ?? '',
+  });
+
   await log('APROBAR_PROYECTO', aprobadorId, p.id);
   revalidatePath(`/proyectos/${proyectoId}`);
   revalidatePath('/proyectos');
 }
+
 
 export async function rechazarProyecto(proyectoId: string, motivo?: string) {
   await requireProfOrAdmin();
@@ -296,13 +344,23 @@ export async function rechazarProyecto(proyectoId: string, motivo?: string) {
     where: { id: proyectoId },
     data: {
       estado: 'RECHAZADO',
+      isActive: false,
       aprobadoPorId: aprobadorId,
       aprobadoEn: new Date(),
     },
     select: { id: true },
   });
 
+  // 💬 guardar comentario si vino
+  await crearComentarioProyecto({
+    proyectoId,
+    autorId: aprobadorId,
+    tipo: 'RECHAZO',
+    texto: motivo ?? '',
+  });
+
   await log('RECHAZAR_PROYECTO', aprobadorId, p.id, { motivo });
   revalidatePath(`/proyectos/${proyectoId}`);
   revalidatePath('/proyectos');
 }
+
