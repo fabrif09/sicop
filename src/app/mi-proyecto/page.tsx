@@ -92,7 +92,7 @@ export default async function MiProyectoPage({ searchParams }: Search) {
                   </div>
                   <Link
                     href={`/proyectos/${r.id}`}
-                    className="text-blue-700 hover:underline text-sm shrink-0"
+                    className="text-blue-700 hover:underline text-sm shrink-0 ml-5"
                   >
                     Ver
                   </Link>

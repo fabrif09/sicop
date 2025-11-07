@@ -364,3 +364,48 @@ export async function rechazarProyecto(proyectoId: string, motivo?: string) {
   revalidatePath('/proyectos');
 }
 
+// NUEVO: actualización limitada para ALUMNO dueño cuando el proyecto está APROBADO
+export async function updateProyectoAlumno(input: {
+  id: string;
+  titulo: string;
+  descripcion: string;
+  funcionalidades: string[];
+  alumnoNombre?: string;   // si querés permitirlos, se ignoran si vienen vacíos
+  alumnoEmail?: string;
+}) {
+  const session = await getServerSession(authOptions);
+  const userId = (session?.user as any)?.id as string | undefined;
+  const role = (session?.user as any)?.role as ('ADMIN'|'PROF'|'ALUMNO') | undefined;
+
+  if (!userId || role !== 'ALUMNO') throw new Error('No autorizado');
+
+  const p = await prisma.proyecto.findUnique({
+    where: { id: input.id },
+    select: { ownerId: true, estado: true },
+  });
+  if (!p) throw new Error('Proyecto inexistente');
+
+  // Solo el dueño puede editar y solo si está APROBADO
+  if (p.ownerId !== userId || p.estado !== 'APROBADO') {
+    throw new Error('No autorizado para editar este proyecto');
+  }
+
+  if (!input.titulo?.trim() || !input.descripcion?.trim()) {
+    throw new Error('Título y descripción son obligatorios');
+  }
+
+  const textoIndexado = buildTextoIndexado(input.titulo, input.descripcion, input.funcionalidades ?? []);
+
+  await prisma.proyecto.update({
+    where: { id: input.id },
+    data: {
+      titulo: input.titulo,
+      descripcion: input.descripcion,
+      funcionalidades: input.funcionalidades ?? [],
+      textoIndexado,
+    },
+  });
+
+  revalidatePath(`/proyectos/${input.id}`);
+  revalidatePath('/mi-proyecto');
+}

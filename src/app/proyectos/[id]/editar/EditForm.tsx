@@ -1,6 +1,7 @@
+// src/app/proyectos/[id]/editar/EditForm.tsx
 'use client';
 import { useState } from 'react';
-import { updateProyecto, buscarSimilaresTrgm } from '../../actions';
+import { updateProyecto, buscarSimilaresTrgm, updateProyectoAlumno } from '../../actions';
 import { useRouter } from 'next/navigation';
 
 type P = {
@@ -15,7 +16,7 @@ type P = {
   estado: 'PROPUESTO' | 'APROBADO' | 'RECHAZADO';
 };
 
-export default function EditForm({ proyecto }: { proyecto: P }) {
+export default function EditForm({ proyecto, canAlumnoEdit }: { proyecto: P; canAlumnoEdit: boolean }) {
   const router = useRouter();
   const [f, setF] = useState({
     titulo: proyecto.titulo,
@@ -43,20 +44,34 @@ export default function EditForm({ proyecto }: { proyecto: P }) {
         limit: 5,
       });
       if (cand.length > 0 && !confirm('Se detectaron proyectos similares. ¿Continuar igualmente?')) {
+        setLoading(false);
         return;
       }
 
-      await updateProyecto({
-        id: proyecto.id,
-        titulo: f.titulo,
-        descripcion: f.descripcion,
-        funcionalidades,
-        alumnoNombre: f.alumnoNombre,
-        alumnoEmail: f.alumnoEmail,
-        anio: Number(f.anio),
-        fechaCarga: f.fechaCarga,
-        estado: f.estado,
-      } as any);
+      if (canAlumnoEdit) {
+        // Alumno dueño: solo actualiza campos permitidos, sin tocar estado
+        await updateProyectoAlumno({
+          id: proyecto.id,
+          titulo: f.titulo,
+          descripcion: f.descripcion,
+          funcionalidades,
+          // alumnoNombre: f.alumnoNombre,
+          // alumnoEmail: f.alumnoEmail,
+        } as any);
+      } else {
+        // Staff: flujo original
+        await updateProyecto({
+          id: proyecto.id,
+          titulo: f.titulo,
+          descripcion: f.descripcion,
+          funcionalidades,
+          alumnoNombre: f.alumnoNombre,
+          alumnoEmail: f.alumnoEmail,
+          anio: Number(f.anio),
+          fechaCarga: f.fechaCarga,
+          estado: f.estado,
+        } as any);
+      }
 
       alert('Proyecto actualizado');
       router.push(`/proyectos/${proyecto.id}`);
@@ -66,6 +81,8 @@ export default function EditForm({ proyecto }: { proyecto: P }) {
       setLoading(false);
     }
   }
+
+  const estadoDisabled = canAlumnoEdit; // alumno no puede cambiar estado
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
@@ -96,56 +113,43 @@ export default function EditForm({ proyecto }: { proyecto: P }) {
         />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Nombre y Apellido</label>
-          <input
-            className="border border-gray-300 rounded w-full p-2 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
-            value={f.alumnoNombre}
-            onChange={e=>setF(s=>({...s, alumnoNombre: e.target.value}))}
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-          <input
-            className="border border-gray-300 rounded w-full p-2 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
-            value={f.alumnoEmail}
-            onChange={e=>setF(s=>({...s, alumnoEmail: e.target.value}))}
-          />
-        </div>
-      </div>
-
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Año</label>
-          <input
-            className="border border-gray-300 rounded w-full p-2 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
-            type="number"
-            value={f.anio}
-            onChange={e=>setF(s=>({...s, anio: e.target.value}))}
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de carga</label>
-          <input
-            className="border border-gray-300 rounded w-full p-2 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
-            type="date"
-            value={f.fechaCarga}
-            onChange={e=>setF(s=>({...s, fechaCarga: e.target.value}))}
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-          <select
-            className="border border-gray-300 rounded w-full p-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
-            value={f.estado}
-            onChange={e=>setF(s=>({...s, estado: e.target.value as any}))}
-          >
-            <option value="PROPUESTO">Propuesto</option>
-            <option value="APROBADO">Aprobado</option>
-            <option value="RECHAZADO">Rechazado</option>
-          </select>
-        </div>
+
+        {/* Mostrar el select, fecha carga y año solo si NO es alumno */}
+        {!canAlumnoEdit && (
+          <div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Año</label>
+              <input
+                className="border border-gray-300 rounded w-full p-2 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+                type="number"
+                value={f.anio}
+                onChange={e=>setF(s=>({...s, anio: e.target.value}))}
+                disabled={canAlumnoEdit}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de carga</label>
+              <input
+                className="border border-gray-300 rounded w-full p-2 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+                type="date"
+                value={f.fechaCarga}
+                onChange={e=>setF(s=>({...s, fechaCarga: e.target.value}))}
+                disabled={canAlumnoEdit}
+              />
+            </div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+            <select
+              className="border border-gray-300 rounded w-full p-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+              value={f.estado}
+              onChange={e=>setF(s=>({...s, estado: e.target.value as any}))}
+            >
+              <option value="PROPUESTO">Propuesto</option>
+              <option value="APROBADO">Aprobado</option>
+              <option value="RECHAZADO">Rechazado</option>
+            </select>
+          </div>
+        )}
       </div>
 
       <button disabled={loading} className="btn w-full" type="submit">

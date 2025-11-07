@@ -48,17 +48,11 @@ export default async function ProyectoDetail({ params }: { params: { id: string 
 
   const isOwner = proyecto.ownerId === userId;
   const isStaff = role === 'ADMIN' || role === 'PROF';
+  const ownerCanEdit = isOwner && proyecto.estado === 'APROBADO';
 
-  if (!(isOwner || isStaff)) {
-    return (
-      <main className="min-h-screen flex items-center justify-center px-4">
-        <div className="w-full max-w-lg bg-white shadow-md rounded-lg p-6 text-center space-y-1">
-          <h1 className="text-xl font-semibold">No autorizado</h1>
-          <p className="text-gray-600">No podés ver proyectos de otros alumnos.</p>
-        </div>
-      </main>
-    );
-  }
+  // ✅ SOLO CAMBIO: destino y texto del botón "Volver"
+  const backHref = isStaff ? '/proyectos' : '/mi-proyecto';
+  const backText = isStaff ? '← Volver a Proyectos' : '← Volver a Mi Proyecto';
 
   return (
     <main className="min-h-[calc(100vh-13.75rem)] px-4 py-6">
@@ -66,13 +60,12 @@ export default async function ProyectoDetail({ params }: { params: { id: string 
         <div className="bg-white shadow-md rounded-lg p-6">
           {/* HEADER */}
           <div className="flex flex-wrap items-start justify-between gap-4">
-            <Link href="/proyectos" className="btn btn-ghost mb-2">
-              ← Volver a Proyectos
+            <Link href={backHref} className="btn btn-ghost mb-2">
+              {backText}
             </Link>
             <h1 className="text-2xl font-bold text-primary break-words">{proyecto.titulo}</h1>
 
-            {isStaff && (
-              /*  en mobile, una columna y full-width; en desktop se acomodan */
+            {(isStaff || ownerCanEdit) && (
               <div className="w-full sm:w-auto grid grid-cols-1 gap-2 text-center">
                 <Link
                   className="btn w-full justify-center"
