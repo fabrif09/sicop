@@ -72,6 +72,9 @@ model Proyecto {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
+  // NUEVO: flag de actividad (soft-delete)
+  isActive        Boolean  @default(true)
+
   // NUEVO: dueño alumno que creó la propuesta
   ownerId         String   @unique
   owner           User     @relation("OwnerProyectos", fields: [ownerId], references: [id])
