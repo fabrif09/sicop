@@ -1,14 +1,13 @@
+// src/app/admin/alumnos/page.tsx
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import { Prisma, Role } from '@prisma/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { aprobarUsuario, crearUsuarioManual, rechazarUsuario } from './serverActions';
+import { aprobarUsuario, rechazarUsuario } from './serverActions';
 import { revalidatePath } from 'next/cache';
 import EditUserModal from './EditUserModal';
-import FiltrosUsuariosClient from './FiltrosUsuariosClient';
-import CrearUsuarioClient from './CrearUsuarioClient';
-
+import FiltrosAlumnosClient from './FiltrosAlumnosClient';
 
 /* ───────────────────────── Server Action: Guardar cambios ───────────────────────── */
 export async function guardarDatosAlumno(formData: FormData) {
@@ -38,6 +37,7 @@ export async function guardarDatosAlumno(formData: FormData) {
     throw new Error('Nota inválida (0-10)');
   }
 
+  // Solo ADMIN puede cambiar rol (por si querés promoverlo, pero esta vista igual muestra solo ALUMNOS)
   const newRoleRaw = String(formData.get('role') ?? '').trim().toUpperCase();
   const canChangeRole =
     viewerRole === 'ADMIN' && ['ADMIN', 'PROF', 'ALUMNO'].includes(newRoleRaw);
@@ -58,7 +58,7 @@ export async function guardarDatosAlumno(formData: FormData) {
   revalidatePath('/admin/usuarios');
 }
 
-/* ───────────────────────────────── Página ───────────────────────────────── */
+/* ───────────────────────────────── Página — SOLO ALUMNOS ───────────────────────────────── */
 type Search = {
   searchParams: Promise<{
     page?: string;
@@ -66,7 +66,6 @@ type Search = {
     dni?: string;
     email?: string;
     celular?: string;
-    rol?: string;
     egresado?: string;
     fechaRindio?: string;
     nota?: string;
@@ -74,7 +73,7 @@ type Search = {
   }>;
 };
 
-export default async function AdminUsuariosPage({ searchParams }: Search) {
+export default async function AdminAlumnosPage({ searchParams }: Search) {
   const session = await getServerSession(authOptions);
   const viewerRole = (session?.user as any)?.role as Role | undefined;
 
@@ -92,23 +91,29 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
   const page = Math.max(parseInt(sp?.page ?? '1', 10) || 1, 1);
   const perPage = 10;
 
+  // Filtros (sin ROL)
   const fNombre = (sp?.nombre ?? '').trim();
   const fDni = (sp?.dni ?? '').trim();
   const fEmail = (sp?.email ?? '').trim();
   const fCelular = (sp?.celular ?? '').trim();
-  const fRol = (sp?.rol ?? '').trim().toUpperCase();
   const fEgresado = (sp?.egresado ?? '').trim();
   const fFecha = (sp?.fechaRindio ?? '').trim();
   const fNota = (sp?.nota ?? '').trim();
   const fProyecto = (sp?.proyecto ?? '').trim();
 
+  // Pendientes (solo ALUMNOS)
   const pendientes = await prisma.user.findMany({
-    where: { isActive: false },
+    where: { isActive: false, role: 'ALUMNO' },
     orderBy: { requestedAt: 'asc' },
     select: { id: true, email: true, nombre: true, requestedAt: true },
   });
 
-  const whereAND: Prisma.UserWhereInput[] = [{ isActive: true }];
+  // WHERE dinámico para activos — SIEMPRE role = 'ALUMNO'
+  const whereAND: Prisma.UserWhereInput[] = [
+    { isActive: true },
+    { role: 'ALUMNO' },
+  ];
+
   if (fNombre)
     whereAND.push({
       nombre: { contains: fNombre, mode: 'insensitive' },
@@ -125,8 +130,7 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
     whereAND.push({
       celular: { contains: fCelular, mode: 'insensitive' },
     });
-  if (fRol && ['ADMIN', 'PROF', 'ALUMNO'].includes(fRol))
-    whereAND.push({ role: fRol as Role });
+
   if (fEgresado === 'true') whereAND.push({ egresado: true });
   if (fEgresado === 'false') whereAND.push({ egresado: false });
 
@@ -155,6 +159,7 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
   }
 
   const where: Prisma.UserWhereInput = { AND: whereAND };
+
   const total = await prisma.user.count({ where });
 
   const activos = await prisma.user.findMany({
@@ -168,7 +173,7 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
       dni: true,
       email: true,
       celular: true,
-      role: true,
+      role: true, // en teoría siempre ALUMNO (pero si ADMIN lo cambia, sirve para reflejarlo)
       egresado: true,
       fechaRindio: true,
       nota: true,
@@ -180,9 +185,9 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
 
   return (
     <main className="px-4 py-6 space-y-8">
-      {/* Pendientes */}
+      {/* Alumnos pendientes */}
       <section className="space-y-3">
-        <h1 className="text-2xl font-bold text-primary">Usuarios pendientes</h1>
+        <h1 className="text-2xl font-bold text-primary">Alumnos pendientes</h1>
         {pendientes.length === 0 ? (
           <div className="text-gray-600">No hay pendientes.</div>
         ) : (
@@ -217,18 +222,17 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
         )}
       </section>
 
-      {/* Activos */}
+      {/* Alumnos activos */}
       <section className="space-y-4">
-        <h2 className="text-xl font-bold text-primary">Usuarios activos</h2>
+        <h2 className="text-xl font-bold text-primary">Alumnos activos</h2>
 
-        {/* Filtros (responsive con toggle en mobile) */}
-        <FiltrosUsuariosClient
+        {/* Filtros responsivos con toggle en mobile */}
+        <FiltrosAlumnosClient
           defaults={{
             fNombre,
             fDni,
             fEmail,
             fCelular,
-            fRol,
             fEgresado,
             fFecha,
             fNota,
@@ -237,14 +241,11 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
           }}
         />
 
-        {/* Crear usuario manualmente */}
-        <CrearUsuarioClient viewerRole={viewerRole} />
-
         {/* Mobile / Cards */}
         <div className="space-y-3 md:hidden">
           {activos.length === 0 ? (
             <div className="text-gray-600">
-              No hay usuarios activos con esos criterios.
+              No hay alumnos con esos criterios.
             </div>
           ) : (
             activos.map((u) => (
@@ -264,10 +265,6 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
                 <div className="text-sm font-bold">
                   Celular:{' '}
                   <span className="text-gray-700">{u.celular ?? '-'}</span>
-                </div>
-                <div className="text-sm font-bold">
-                  Rol:{' '}
-                  <span className="text-gray-700">{u.role}</span>
                 </div>
                 <div className="text-sm font-bold">
                   Egresado:{' '}
@@ -329,7 +326,6 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
                 <th className="p-3">DNI</th>
                 <th className="p-3">Email</th>
                 <th className="p-3">Celular</th>
-                <th className="p-3">Rol</th>
                 <th className="p-3">Egresado</th>
                 <th className="p-3">Fecha rendida</th>
                 <th className="p-3">Nota</th>
@@ -341,10 +337,10 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
               {activos.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={10}
+                    colSpan={9}
                     className="p-4 text-center text-gray-500"
                   >
-                    No hay usuarios activos con esos criterios.
+                    No hay alumnos con esos criterios.
                   </td>
                 </tr>
               ) : (
@@ -358,7 +354,6 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
                     <td className="p-3 whitespace-nowrap">
                       {u.celular ?? '-'}
                     </td>
-                    <td className="p-3 whitespace-nowrap">{u.role}</td>
                     <td className="p-3 whitespace-nowrap">
                       {u.egresado ? 'Sí' : 'No'}
                     </td>
@@ -385,7 +380,6 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
                         </span>
                       )}
                     </td>
-
                     <td className="p-3">
                       <EditUserModal
                         user={{

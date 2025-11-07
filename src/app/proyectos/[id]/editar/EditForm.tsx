@@ -35,7 +35,6 @@ export default function EditForm({ proyecto }: { proyecto: P }) {
     try {
       const funcionalidades = f.funcionalidades.split(',').map(s=>s.trim()).filter(Boolean);
 
-      // opcional: volver a chequear duplicados si titulo/desc cambian
       const cand = await buscarSimilaresTrgm({
         titulo: f.titulo,
         descripcion: f.descripcion,
@@ -69,24 +68,87 @@ export default function EditForm({ proyecto }: { proyecto: P }) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-2">
-      <input className="border p-2 w-full" value={f.titulo} onChange={e=>setF(s=>({...s, titulo: e.target.value}))}/>
-      <textarea className="border p-2 w-full" value={f.descripcion} onChange={e=>setF(s=>({...s, descripcion: e.target.value}))}/>
-      <input className="border p-2 w-full" value={f.funcionalidades} onChange={e=>setF(s=>({...s, funcionalidades: e.target.value}))}/>
-      <div className="grid grid-cols-2 gap-2">
-        <input className="border p-2" value={f.alumnoNombre} onChange={e=>setF(s=>({...s, alumnoNombre: e.target.value}))}/>
-        <input className="border p-2" value={f.alumnoEmail} onChange={e=>setF(s=>({...s, alumnoEmail: e.target.value}))}/>
+    <form onSubmit={onSubmit} className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Título</label>
+        <input
+          className="border border-gray-300 rounded w-full p-2 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+          value={f.titulo}
+          onChange={e=>setF(s=>({...s, titulo: e.target.value}))}
+        />
       </div>
-      <div className="grid grid-cols-3 gap-2">
-        <input className="border p-2" type="number" value={f.anio} onChange={e=>setF(s=>({...s, anio: e.target.value}))}/>
-        <input className="border p-2" type="date" value={f.fechaCarga} onChange={e=>setF(s=>({...s, fechaCarga: e.target.value}))}/>
-        <select className="border p-2" value={f.estado} onChange={e=>setF(s=>({...s, estado: e.target.value as any}))}>
-          <option value="PROPUESTO">Propuesto</option>
-          <option value="APROBADO">Aprobado</option>
-          <option value="RECHAZADO">Rechazado</option>
-        </select>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+        <textarea
+          className="border border-gray-300 rounded w-full p-2 min-h-[150px] focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+          value={f.descripcion}
+          onChange={e=>setF(s=>({...s, descripcion: e.target.value}))}
+        />
       </div>
-      <button disabled={loading} className="border px-4 py-2" type="submit">
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Funcionalidades (separadas por coma)</label>
+        <input
+          className="border border-gray-300 rounded w-full p-2 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+          value={f.funcionalidades}
+          onChange={e=>setF(s=>({...s, funcionalidades: e.target.value}))}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Nombre y Apellido</label>
+          <input
+            className="border border-gray-300 rounded w-full p-2 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+            value={f.alumnoNombre}
+            onChange={e=>setF(s=>({...s, alumnoNombre: e.target.value}))}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+          <input
+            className="border border-gray-300 rounded w-full p-2 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+            value={f.alumnoEmail}
+            onChange={e=>setF(s=>({...s, alumnoEmail: e.target.value}))}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Año</label>
+          <input
+            className="border border-gray-300 rounded w-full p-2 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+            type="number"
+            value={f.anio}
+            onChange={e=>setF(s=>({...s, anio: e.target.value}))}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de carga</label>
+          <input
+            className="border border-gray-300 rounded w-full p-2 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+            type="date"
+            value={f.fechaCarga}
+            onChange={e=>setF(s=>({...s, fechaCarga: e.target.value}))}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+          <select
+            className="border border-gray-300 rounded w-full p-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+            value={f.estado}
+            onChange={e=>setF(s=>({...s, estado: e.target.value as any}))}
+          >
+            <option value="PROPUESTO">Propuesto</option>
+            <option value="APROBADO">Aprobado</option>
+            <option value="RECHAZADO">Rechazado</option>
+          </select>
+        </div>
+      </div>
+
+      <button disabled={loading} className="btn w-full" type="submit">
         {loading ? 'Guardando...' : 'Guardar cambios'}
       </button>
     </form>

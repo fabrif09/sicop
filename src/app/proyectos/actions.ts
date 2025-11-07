@@ -6,6 +6,8 @@ import { revalidatePath } from 'next/cache';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
+/* ===================== helpers ===================== */
+
 async function getSessionUser() {
   const session = await getServerSession(authOptions);
 
@@ -47,10 +49,12 @@ async function log(action: string, userId: string, proyectoId?: string, metadata
   });
 }
 
-// ---- BÚSQUEDA DIFUSA (para profes) opcional: si ya lo tenías, dejalo igual ----
+/* ===================== búsqueda ===================== */
+
+// Búsqueda difusa para staff
 export async function buscarProyectos(input: { q: string; limit?: number; umbral?: number }) {
   await requireProfOrAdmin();
-  const q = buildTextoIndexado(input.q, '', []);
+  const qIndex = buildTextoIndexado(input.q, '', []);
   const limit = input.limit ?? 20;
   const umbral = input.umbral ?? 0.30;
 
@@ -58,17 +62,17 @@ export async function buscarProyectos(input: { q: string; limit?: number; umbral
     { id: string; titulo: string; alumnoNombre: string; fechaCarga: Date; anio: number; score: number }[]
   >`
     SELECT p.id, p.titulo, p."alumnoNombre", p."fechaCarga", p."anio",
-           similarity(p."textoIndexado", ${q}) AS score
+           similarity(p."textoIndexado", ${qIndex}) AS score
     FROM "Proyecto" AS p
-    WHERE (p."textoIndexado" % ${q} AND similarity(p."textoIndexado", ${q}) >= ${umbral})
-       OR (p."titulo" ILIKE ${'%' + q + '%'})
+    WHERE (p."textoIndexado" % ${qIndex} AND similarity(p."textoIndexado", ${qIndex}) >= ${umbral})
+       OR (p."titulo" ILIKE ${'%' + input.q + '%'})
     ORDER BY score DESC NULLS LAST, p."createdAt" DESC
     LIMIT ${limit};
   `;
   return rows;
 }
 
-// ---- SIMILARES (lo puede usar alumno también) ----
+// Similaridad trigram (para aviso de posibles duplicados)
 export async function buscarSimilaresTrgm(input: {
   titulo: string; descripcion: string; funcionalidades: string[]; limit?: number; umbral?: number;
 }) {
@@ -90,13 +94,26 @@ export async function buscarSimilaresTrgm(input: {
   return rows;
 }
 
-// ---- CREAR PROYECTO (ALUMNO crea + queda APROBADO) ----
+/* ===================== CRUD proyecto ===================== */
+
+// Crear proyecto (queda PROPUESTO por default en el schema)
 export async function createProyecto(input: {
   titulo: string; descripcion: string; funcionalidades: string[];
   alumnoNombre: string; alumnoEmail: string;
-  anio: number; fechaCarga: string; // yyyy-mm-dd
+  anio: number; fechaCarga: string;
 }) {
-  const { userId } = await getSessionUser();
+  const { userId, role } = await getSessionUser();
+
+  // ⬇️ Solo alumnos pueden crear
+  if (role !== 'ALUMNO') {
+    throw new Error('Solo los alumnos pueden crear proyectos.');
+  }
+
+  // ⬇️ Verificar que no tenga ya un proyecto
+  const yaTiene = await prisma.proyecto.count({ where: { ownerId: userId } });
+  if (yaTiene > 0) {
+    throw new Error('Ya tenés un proyecto creado.');
+  }
 
   if (!input.titulo?.trim() || !input.descripcion?.trim()) throw new Error('Título y descripción son obligatorios');
   if (!input.alumnoNombre?.trim() || !input.alumnoEmail?.trim()) throw new Error('Datos del alumno obligatorios');
@@ -120,8 +137,8 @@ export async function createProyecto(input: {
       anio: input.anio,
       fechaCarga: fecha,
       textoIndexado,
-      ownerId: userId,
-      estado: 'APROBADO', // 👈 simplificado
+      ownerId: userId,           // dueño = alumno
+      // estado por defecto ya es PROPUESTO en el schema
     },
     select: { id: true },
   });
@@ -131,14 +148,24 @@ export async function createProyecto(input: {
   return p.id;
 }
 
-// ---- REGISTRAR DOCUMENTO (ALUMNO owner o STAFF) ----
+
+/* ===================== documentos ===================== */
+
+// Registrar documento (owner ALUMNO o STAFF)
 export async function registrarDocumento(input: {
-  proyectoId: string; key: string; mime: string; size: number;
-  tipo: 'PROPUESTA' | 'PDF_FINAL' | 'OTRO'; version?: number;
+  proyectoId: string;
+  key: string;
+  mime: string;
+  size: number;
+  tipo: 'PROPUESTA' | 'PDF_FINAL' | 'PRESENTACION' | 'OTRO';
+  version?: number; // si no lo mandan, calculo siguiente
 }) {
   const { userId, role } = await getSessionUser();
 
-  const p = await prisma.proyecto.findUnique({ where: { id: input.proyectoId }, select: { ownerId: true } });
+  const p = await prisma.proyecto.findUnique({
+    where: { id: input.proyectoId },
+    select: { ownerId: true, estado: true },
+  });
   if (!p) throw new Error('Proyecto inexistente');
 
   const isOwnerAlumno = role === 'ALUMNO' && p.ownerId === userId;
@@ -148,7 +175,25 @@ export async function registrarDocumento(input: {
   if (input.mime !== 'application/pdf') throw new Error('Solo PDF');
   if (input.size > 15 * 1024 * 1024) throw new Error('PDF > 15MB');
 
+  // Regla de negocio:
+  //   - Si el proyecto está PROPUESTO => solo PROPUESTA.
+  //   - Si está APROBADO => permitir PDF_FINAL y PRESENTACION (además de PROPUESTA/OTRO).
+  if (p.estado === 'PROPUESTO' && input.tipo !== 'PROPUESTA') {
+    throw new Error('Hasta que el proyecto no esté APROBADO, solo se puede subir la PROPUESTA.');
+  }
+
   const safeKey = sanitizeKey(input.key);
+
+  // versionado automático por tipo
+  let nextVersion = input.version ?? 1;
+  if (!input.version) {
+    const last = await prisma.documento.findFirst({
+      where: { proyectoId: input.proyectoId, tipo: input.tipo as any },
+      orderBy: { version: 'desc' },
+      select: { version: true },
+    });
+    if (last?.version) nextVersion = last.version + 1;
+  }
 
   const doc = await prisma.documento.create({
     data: {
@@ -157,18 +202,21 @@ export async function registrarDocumento(input: {
       url: safeKey,
       mime: input.mime,
       size: input.size,
-      version: input.version ?? 1,
+      version: nextVersion,
       uploadedById: userId,
     },
     select: { id: true },
   });
 
-  await log('SUBIR_PDF', userId, input.proyectoId, { key: safeKey, size: input.size, tipo: input.tipo });
+  await log('SUBIR_PDF', userId, input.proyectoId, {
+    key: safeKey, size: input.size, tipo: input.tipo, version: nextVersion,
+  });
   revalidatePath(`/proyectos/${input.proyectoId}`);
   return doc;
 }
 
-// ---- CHECKSUM opcional (si lo usás) ----
+/* ===================== extras ===================== */
+
 export async function setProyectoChecksum(input: { proyectoId: string; checksum: string }) {
   const { userId, role } = await getSessionUser();
   const isStaff = role === 'ADMIN' || role === 'PROF';
@@ -178,7 +226,6 @@ export async function setProyectoChecksum(input: { proyectoId: string; checksum:
   await log('EDITAR_PROYECTO', userId, input.proyectoId, { setChecksum: true });
 }
 
-// ---- UPDATE/DELETE (solo staff) ----
 export async function updateProyecto(input: {
   id: string; titulo: string; descripcion: string; funcionalidades: string[];
   alumnoNombre: string; alumnoEmail: string; anio: number; fechaCarga: string;
@@ -215,5 +262,47 @@ export async function updateProyecto(input: {
 export async function deleteProyecto(input: { proyectoId: string }) {
   await requireProfOrAdmin();
   await prisma.proyecto.delete({ where: { id: input.proyectoId } });
+  revalidatePath('/proyectos');
+}
+
+/* ===================== aprobar / rechazar ===================== */
+
+export async function aprobarProyecto(proyectoId: string) {
+  await requireProfOrAdmin();
+  const session = await getServerSession(authOptions);
+  const aprobadorId = (session?.user as any)?.id as string;
+
+  const p = await prisma.proyecto.update({
+    where: { id: proyectoId },
+    data: {
+      estado: 'APROBADO',
+      aprobadoPorId: aprobadorId,
+      aprobadoEn: new Date(),
+    },
+    select: { id: true },
+  });
+
+  await log('APROBAR_PROYECTO', aprobadorId, p.id);
+  revalidatePath(`/proyectos/${proyectoId}`);
+  revalidatePath('/proyectos');
+}
+
+export async function rechazarProyecto(proyectoId: string, motivo?: string) {
+  await requireProfOrAdmin();
+  const session = await getServerSession(authOptions);
+  const aprobadorId = (session?.user as any)?.id as string;
+
+  const p = await prisma.proyecto.update({
+    where: { id: proyectoId },
+    data: {
+      estado: 'RECHAZADO',
+      aprobadoPorId: aprobadorId,
+      aprobadoEn: new Date(),
+    },
+    select: { id: true },
+  });
+
+  await log('RECHAZAR_PROYECTO', aprobadorId, p.id, { motivo });
+  revalidatePath(`/proyectos/${proyectoId}`);
   revalidatePath('/proyectos');
 }

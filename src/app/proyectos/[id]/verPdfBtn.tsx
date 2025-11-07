@@ -17,8 +17,11 @@ export default function VerPdfBtn({ keyS3 }: { keyS3: string }) {
   }
 
   return (
-    <button className="underline" onClick={handleClick}>
-      Ver
+    <button
+      onClick={handleClick}
+      className="btn bg-green-600 hover:bg-green-700 w-full sm:w-auto hover:cursor-pointer"
+    >
+      Ver PDF
     </button>
   );
 }

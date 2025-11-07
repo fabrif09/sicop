@@ -4,9 +4,9 @@ import { deleteProyecto } from '../actions';
 
 export default function DeleteBtn({ id }: { id: string }) {
   const router = useRouter();
+
   return (
     <button
-      className="border px-3 py-1 rounded text-red-600"
       onClick={async () => {
         if (!confirm('¿Seguro que quieres borrar este proyecto? Esta acción es permanente.')) return;
         try {
@@ -17,6 +17,7 @@ export default function DeleteBtn({ id }: { id: string }) {
           alert(e?.message ?? 'No se pudo borrar');
         }
       }}
+      className="btn bg-red-600 hover:bg-red-700 w-full sm:w-auto hover:cursor-pointer"
     >
       Borrar
     </button>
