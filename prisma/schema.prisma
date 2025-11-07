@@ -52,6 +52,9 @@ model User {
   logs         AuditLog[]
 
   materialesSubidos MaterialCatedra[] @relation("UploaderMateriales")
+  
+  comentariosProyecto ProyectoComentario[]
+
 }
 
 model Proyecto {
@@ -80,6 +83,9 @@ model Proyecto {
 
   documentos Documento[]
   logs       AuditLog[]
+
+  comentarios ProyectoComentario[]
+
 }
 
 model Documento {
@@ -137,4 +143,21 @@ model MaterialCatedra {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+enum ComentarioTipo {
+  APROBACION
+  RECHAZO
+  FEEDBACK
+}
+
+model ProyectoComentario {
+  id         String         @id @default(cuid())
+  proyecto   Proyecto       @relation(fields: [proyectoId], references: [id], onDelete: Cascade)
+  proyectoId String
+  autor      User           @relation(fields: [autorId], references: [id], onDelete: SetNull)
+  autorId    String
+  tipo       ComentarioTipo
+  texto      String
+  createdAt  DateTime       @default(now())
 }
