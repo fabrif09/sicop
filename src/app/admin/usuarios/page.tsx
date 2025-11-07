@@ -240,7 +240,7 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
         {/* Crear usuario manualmente */}
         <CrearUsuarioClient viewerRole={viewerRole} />
 
-        {/* Mobile / Cards */}
+        {/* Mobile / Cards (1 columna) */}
         <div className="space-y-3 md:hidden">
           {activos.length === 0 ? (
             <div className="text-gray-600">
@@ -254,8 +254,7 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
               >
                 <div className="font-semibold text-primary">{u.nombre}</div>
                 <div className="text-sm font-bold">
-                  DNI:{' '}
-                  <span className="text-gray-700">{u.dni ?? '-'}</span>
+                  DNI: <span className="text-gray-700">{u.dni ?? '-'}</span>
                 </div>
                 <div className="text-sm font-bold">
                   Email:{' '}
@@ -320,8 +319,90 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
           )}
         </div>
 
+        {/* ✅ Mediano (ventana dividida) — Cards en 2/3 columnas */}
+        <div className="hidden md:grid lg:hidden gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {activos.length === 0 ? (
+            <div className="text-gray-600 md:col-span-2 xl:col-span-3">
+              No hay usuarios activos con esos criterios.
+            </div>
+          ) : (
+            activos.map((u) => (
+              <div
+                key={u.id}
+                className="bg-white rounded-lg shadow-sm p-4 border"
+              >
+                <div className="font-semibold text-primary mb-1">
+                  {u.nombre}
+                </div>
+                <div className="text-sm">
+                  <span className="font-semibold">DNI: </span>
+                  <span className="text-gray-700">{u.dni ?? '-'}</span>
+                </div>
+                <div className="text-sm">
+                  <span className="font-semibold">Email: </span>
+                  <span className="text-gray-700 break-all">{u.email}</span>
+                </div>
+                <div className="text-sm">
+                  <span className="font-semibold">Celular: </span>
+                  <span className="text-gray-700">{u.celular ?? '-'}</span>
+                </div>
+                <div className="text-sm">
+                  <span className="font-semibold">Rol: </span>
+                  <span className="text-gray-700">{u.role}</span>
+                </div>
+                <div className="text-sm">
+                  <span className="font-semibold">Egresado: </span>
+                  <span className="text-gray-700">
+                    {u.egresado ? 'Sí' : 'No'}
+                  </span>
+                </div>
+                <div className="text-sm">
+                  <span className="font-semibold">Fecha rendida: </span>
+                  <span className="text-gray-700">
+                    {u.fechaRindio
+                      ? u.fechaRindio.toISOString().slice(0, 10)
+                      : '-'}
+                  </span>
+                </div>
+                <div className="text-sm">
+                  <span className="font-semibold">Nota: </span>
+                  <span className="text-gray-700">{u.nota ?? '-'}</span>
+                </div>
+                <div className="text-sm">
+                  <span className="font-semibold">Proyecto: </span>
+                  {u.proyectos[0] ? (
+                    <Link
+                      href={`/proyectos/${u.proyectos[0].id}`}
+                      className="text-blue-700 hover:underline"
+                    >
+                      {u.proyectos[0].titulo || 'Ver proyecto'}
+                    </Link>
+                  ) : (
+                    <span className="text-gray-400">Sin proyecto</span>
+                  )}
+                </div>
+
+                <div className="mt-3">
+                  <EditUserModal
+                    user={{
+                      id: u.id,
+                      egresado: u.egresado,
+                      fechaRindio: u.fechaRindio,
+                      nota: u.nota,
+                      role: u.role,
+                    }}
+                    canEditRole={viewerRole === 'ADMIN'}
+                    onSave={guardarDatosAlumno}
+                    triggerClassName="w-full"
+                  />
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
         {/* Desktop / Tabla */}
-        <div className="hidden md:block">
+        <div className="hidden md:block lg:block">
           <table className="w-full border-collapse bg-white shadow-sm rounded-lg text-sm">
             <thead>
               <tr className="bg-blue-50 text-left font-semibold text-blue-800">
@@ -409,7 +490,6 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
         {/* Paginación */}
         <div className="mt-4 flex flex-col items-center gap-3">
           <div className="flex justify-center gap-2">
-            {/* Botón anterior */}
             {page > 1 && (
               <Link
                 href={`/admin/usuarios?page=${page - 1}`}
@@ -419,13 +499,13 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
               </Link>
             )}
 
-            {/* Números de página */}
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => {
               const params = new URLSearchParams({ page: String(n) });
               if (fNombre) params.set('nombre', fNombre);
               if (fDni) params.set('dni', fDni);
               if (fEmail) params.set('email', fEmail);
               if (fCelular) params.set('celular', fCelular);
+              if (fRol) params.set('rol', fRol);
               if (fEgresado) params.set('egresado', fEgresado);
               if (fFecha) params.set('fechaRindio', fFecha);
               if (fNota) params.set('nota', fNota);
@@ -447,7 +527,6 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
               );
             })}
 
-            {/* Botón siguiente */}
             {page < totalPages && (
               <Link
                 href={`/admin/usuarios?page=${page + 1}`}
@@ -458,7 +537,6 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
             )}
           </div>
 
-          {/* Indicador de página actual */}
           <p className="text-sm text-gray-600">
             Página {page} de {totalPages}
           </p>

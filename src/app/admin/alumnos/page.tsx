@@ -241,7 +241,7 @@ export default async function AdminAlumnosPage({ searchParams }: Search) {
           }}
         />
 
-        {/* Mobile / Cards */}
+        {/* Mobile / Cards (una sola columna) */}
         <div className="space-y-3 md:hidden">
           {activos.length === 0 ? (
             <div className="text-gray-600">
@@ -255,8 +255,7 @@ export default async function AdminAlumnosPage({ searchParams }: Search) {
               >
                 <div className="font-semibold text-primary">{u.nombre}</div>
                 <div className="text-sm font-bold">
-                  DNI:{' '}
-                  <span className="text-gray-700">{u.dni ?? '-'}</span>
+                  DNI: <span className="text-gray-700">{u.dni ?? '-'}</span>
                 </div>
                 <div className="text-sm font-bold">
                   Email:{' '}
@@ -317,8 +316,86 @@ export default async function AdminAlumnosPage({ searchParams }: Search) {
           )}
         </div>
 
-        {/* Desktop / Tabla */}
-        <div className="hidden md:block">
+        {/* Medio/Chico (ventana dividida) — Cards en 2/3 columnas */}
+        <div className="hidden md:grid lg:hidden gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {activos.length === 0 ? (
+            <div className="text-gray-600 md:col-span-2 xl:col-span-3">
+              No hay alumnos con esos criterios.
+            </div>
+          ) : (
+            activos.map((u) => (
+              <div
+                key={u.id}
+                className="bg-white rounded-lg shadow-sm p-4 border"
+              >
+                <div className="font-semibold text-primary mb-1">
+                  {u.nombre}
+                </div>
+                <div className="text-sm">
+                  <span className="font-semibold">DNI: </span>
+                  <span className="text-gray-700">{u.dni ?? '-'}</span>
+                </div>
+                <div className="text-sm">
+                  <span className="font-semibold">Email: </span>
+                  <span className="text-gray-700 break-all">{u.email}</span>
+                </div>
+                <div className="text-sm">
+                  <span className="font-semibold">Celular: </span>
+                  <span className="text-gray-700">{u.celular ?? '-'}</span>
+                </div>
+                <div className="text-sm">
+                  <span className="font-semibold">Egresado: </span>
+                  <span className="text-gray-700">
+                    {u.egresado ? 'Sí' : 'No'}
+                  </span>
+                </div>
+                <div className="text-sm">
+                  <span className="font-semibold">Fecha rendida: </span>
+                  <span className="text-gray-700">
+                    {u.fechaRindio
+                      ? u.fechaRindio.toISOString().slice(0, 10)
+                      : '-'}
+                  </span>
+                </div>
+                <div className="text-sm">
+                  <span className="font-semibold">Nota: </span>
+                  <span className="text-gray-700">{u.nota ?? '-'}</span>
+                </div>
+                <div className="text-sm">
+                  <span className="font-semibold">Proyecto: </span>
+                  {u.proyectos[0] ? (
+                    <Link
+                      href={`/proyectos/${u.proyectos[0].id}`}
+                      className="text-blue-700 hover:underline"
+                    >
+                      {u.proyectos[0].titulo || 'Ver proyecto'}
+                    </Link>
+                  ) : (
+                    <span className="text-gray-400">Sin proyecto</span>
+                  )}
+                </div>
+
+                <div className="mt-3">
+                  <EditUserModal
+                    user={{
+                      id: u.id,
+                      egresado: u.egresado,
+                      fechaRindio: u.fechaRindio,
+                      nota: u.nota,
+                      role: u.role,
+                    }}
+                    canEditRole={viewerRole === 'ADMIN'}
+                    onSave={guardarDatosAlumno}
+                    triggerClassName="w-full"
+                  />
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Desktop amplio / Tabla */}
+        <div className="hidden lg:block">
           <table className="w-full border-collapse bg-white shadow-sm rounded-lg text-sm">
             <thead>
               <tr className="bg-blue-50 text-left font-semibold text-blue-800">
