@@ -76,7 +76,7 @@ model Proyecto {
   isActive        Boolean  @default(true)
 
   // NUEVO: dueño alumno que creó la propuesta
-  ownerId         String   @unique
+  ownerId         String   
   owner           User     @relation("OwnerProyectos", fields: [ownerId], references: [id])
 
   // NUEVO: quién la aprobó y cuándo
