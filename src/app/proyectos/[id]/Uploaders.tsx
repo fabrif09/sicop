@@ -14,14 +14,14 @@ type Props = {
 export default function Uploaders({ proyectoId, estado, isOwner, isStaff }: Props) {
   const [fileFinal, setFileFinal] = useState<File | null>(null);
   const [filePres, setFilePres] = useState<File | null>(null);
-  const [fileProp, setFileProp] = useState<File | null>(null); // ✅ nuevo para PROPUESTA
+  const [fileProp, setFileProp] = useState<File | null>(null); //  nuevo para PROPUESTA
   const [busy, setBusy] = useState<'FINAL' | 'PRES' | 'PROP' | null>(null);
 
   // Reglas
   const canOwnerUploadNow = isOwner && estado === 'APROBADO';
   const canUploadFinal = isStaff || canOwnerUploadNow;
   const canUploadPres = isStaff || canOwnerUploadNow;
-  const canUploadProp = isStaff || canOwnerUploadNow; // ✅ permitir PROPUESTA en APROBADO
+  const canUploadProp = isStaff || canOwnerUploadNow; //  permitir PROPUESTA en APROBADO
 
   async function doUpload(kind: 'PDF_FINAL' | 'PRESENTACION' | 'PROPUESTA') {
     const file =
@@ -89,7 +89,7 @@ export default function Uploaders({ proyectoId, estado, isOwner, isStaff }: Prop
         </p>
       )}
 
-      {/* ✅ PROPUESTA (visible si está APROBADO) */}
+      {/* PROPUESTA (visible si está APROBADO) */}
       {estado === 'APROBADO' && (
         <div className="flex items-center gap-3 border rounded p-3 mt-2">
           <div className="flex-1">

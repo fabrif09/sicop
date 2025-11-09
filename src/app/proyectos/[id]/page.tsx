@@ -5,8 +5,9 @@ import { authOptions } from '@/lib/auth';
 import Uploaders from './Uploaders';
 import VerPdfBtn from './VerPdfBtn';
 import Link from 'next/link';
-import DeleteBtn from './DeleteBtn';
 import { revalidatePath } from 'next/cache';
+import { FileText, FileCheck, Presentation, GraduationCap, File } from "lucide-react";
+
 
 export default async function ProyectoDetail({ params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -50,7 +51,7 @@ export default async function ProyectoDetail({ params }: { params: { id: string 
   const isStaff = role === 'ADMIN' || role === 'PROF';
   const ownerCanEdit = isOwner && proyecto.estado === 'APROBADO';
 
-  // ✅ SOLO CAMBIO: destino y texto del botón "Volver"
+  // SOLO CAMBIO: destino y texto del botón "Volver"
   const backHref = isStaff ? '/proyectos' : '/mi-proyecto';
   const backText = isStaff ? '← Volver a Proyectos' : '← Volver a Mi Proyecto';
 
@@ -101,13 +102,13 @@ export default async function ProyectoDetail({ params }: { params: { id: string 
                 </button>
               </form>
 
-              {/* Rechazar */}
+              {/* Rechazar (motivo obligatorio) */}
               <form
                 action={async (formData: FormData) => {
                   'use server';
                   const motivo = String(formData.get('motivo') || '');
                   const { rechazarProyecto } = await import('../actions');
-                  await rechazarProyecto(proyecto.id, motivo);
+                  await rechazarProyecto(proyecto.id, motivo); // el server valida también
                   revalidatePath(`/proyectos/${proyecto.id}`);
                 }}
                 className="flex flex-wrap items-center gap-2 w-full sm:w-auto"
@@ -115,7 +116,11 @@ export default async function ProyectoDetail({ params }: { params: { id: string 
                 <input
                   name="motivo"
                   className="border p-2 rounded flex-1 min-w-[180px]"
-                  placeholder="Motivo (opcional)"
+                  placeholder="Motivo (obligatorio)"
+                  required
+                  // exige al menos un caracter no espacio
+                  pattern=".*\S.*"
+                  title="Ingresá al menos un carácter no vacío."
                 />
                 <button type="submit" className="btn bg-red-600 hover:bg-red-700 w-full sm:w-auto">
                   Rechazar
@@ -180,22 +185,51 @@ export default async function ProyectoDetail({ params }: { params: { id: string 
               <h4 className="text-lg font-semibold">Documentos</h4>
 
               <ul className="space-y-2 mt-1">
-                {proyecto.documentos.map((doc) => (
-                  <li
-                    key={doc.id}
-                    className="border p-3 rounded flex flex-wrap items-center justify-between hover:bg-gray-50 gap-2"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="font-medium break-words">
-                        {doc.tipo} — v{doc.version} — {(doc.size / 1024).toFixed(1)} KB
+                {proyecto.documentos.map((doc) => {
+                  // Etiqueta solo de render (no toca DB)
+                  const label =
+                    doc.tipo === 'OTRO' && doc.url.includes('/historia_academica/')
+                      ? 'HISTORIA_ACADEMICA'
+                      : doc.tipo;
+
+                  // Icono por etiqueta
+                  const iconByLabel: Record<string, React.ComponentType<{ className?: string }>> = {
+                    PROPUESTA: FileText,
+                    PDF_FINAL: FileCheck,
+                    PRESENTACION: Presentation,
+                    HISTORIA_ACADEMICA: GraduationCap,
+                  };
+                  const Icon = iconByLabel[label] ?? File;
+
+                  // Color sutil por tipo (solo estética)
+                  const colorClass =
+                    label === 'PROPUESTA' ? 'text-blue-600'
+                    : label === 'PDF_FINAL' ? 'text-emerald-600'
+                    : label === 'PRESENTACION' ? 'text-violet-600'
+                    : label === 'HISTORIA_ACADEMICA' ? 'text-amber-600'
+                    : 'text-gray-600';
+
+                  return (
+                    <li
+                      key={doc.id}
+                      className="border p-3 rounded flex flex-wrap items-center justify-between hover:bg-gray-50 gap-2"
+                    >
+                      <div className="min-w-0 flex-1 flex items-start gap-2">
+                        <Icon className={`mt-0.5 h-5 w-5 shrink-0 ${colorClass}`} />
+                        <div className="min-w-0">
+                          <div className="font-medium break-words">
+                            {label} — v{doc.version} — {(doc.size / 1024).toFixed(1)} KB
+                          </div>
+                          <div className="text-sm text-gray-600">{doc.mime}</div>
+                        </div>
                       </div>
-                      <div className="text-sm text-gray-600">{doc.mime}</div>
-                    </div>
-                    <div className="shrink-0">
-                      <VerPdfBtn keyS3={doc.url} />
-                    </div>
-                  </li>
-                ))}
+                      <div className="shrink-0">
+                        <VerPdfBtn keyS3={doc.url} />
+                      </div>
+                    </li>
+                  );
+                })}
+
                 {proyecto.documentos.length === 0 && <li className="text-gray-600">Sin documentos.</li>}
               </ul>
 

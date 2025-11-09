@@ -9,6 +9,7 @@ import {
   GraduationCap,
   Users,
   LogIn,
+  CircleUser
 } from 'lucide-react';
 
 type NavItem = {
@@ -22,11 +23,15 @@ export default function HeaderClient({
   loggedIn,
   showLogout,
   headerClassName,
+  userId,
+  userName,
 }: {
   navItems: NavItem[];
   loggedIn: boolean;
   showLogout: boolean;
   headerClassName: string;
+  userId?: string;
+  userName?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [animateIn, setAnimateIn] = useState(false);
@@ -34,22 +39,14 @@ export default function HeaderClient({
   function openMenu() {
     setOpen(true);
   }
-
   function closeMenu() {
     setAnimateIn(false);
-    setTimeout(() => {
-      setOpen(false);
-    }, 200);
+    setTimeout(() => setOpen(false), 200);
   }
 
   useEffect(() => {
-    if (open) {
-      requestAnimationFrame(() => {
-        setAnimateIn(true);
-      });
-    } else {
-      setAnimateIn(false);
-    }
+    if (open) requestAnimationFrame(() => setAnimateIn(true));
+    else setAnimateIn(false);
   }, [open]);
 
   const Badge = ({ count }: { count?: number }) =>
@@ -59,10 +56,10 @@ export default function HeaderClient({
       </span>
     ) : null;
 
-  // Mapa de íconos según label
   const getIcon = (label: string) => {
     if (label === 'Material Cátedra') return Files;
     if (label === 'Proyectos') return FolderKanban;
+    if (label === 'Mi proyecto') return FolderKanban;
     if (label === 'Alumnos') return GraduationCap;
     if (label === 'Usuarios') return Users;
     return null;
@@ -73,9 +70,8 @@ export default function HeaderClient({
       {/* TOP BAR */}
       <header className={headerClassName}>
         <div className="mx-auto max-w-5xl px-4 h-14 flex items-center justify-between">
-          {/* LEFT: burger (mobile) + logo */}
+          {/* LEFT: burger + logo */}
           <div className="flex items-center gap-25">
-            {/* hamburger visible solo en mobile */}
             <button
               className="md:hidden inline-flex flex-col justify-center gap-[4px] p-2 rounded hover:bg-white/10 focus:outline-none"
               aria-label="Abrir menú"
@@ -86,14 +82,16 @@ export default function HeaderClient({
               <span className="block h-[2px] w-6 bg-white rounded" />
             </button>
 
-            {/* Logo */}
             <Link href="/" className="flex items-center gap-2">
               <div className="h-7 w-7 rounded-md bg-white flex items-center justify-center mr">
                 <h1 className="font-heading font-black text-2xl bg-gradient-to-r from-blue-900 to-blue-500 bg-clip-text text-transparent">
                   S
                 </h1>
               </div>
-              <span className="font-heading tracking-wide text-white">SICOP</span>
+
+              {/* 👇 visible en mobile, oculto en md, vuelve a mostrarse en lg */}
+              <span className="font-heading tracking-wide text-white md:hidden">SICOP</span>
+              <span className="font-heading tracking-wide text-white hidden lg:inline">SICOP</span>
             </Link>
           </div>
 
@@ -123,16 +121,28 @@ export default function HeaderClient({
                 Ingresar
               </Link>
             ) : (
-              <LogoutBtn />
+              <>
+                {/* 👇 Perfil con nombre del usuario */}
+                {userId && (
+                  <Link
+                    href={`/usuarios/${userId}`}
+                    className="text-white text-sm hover:underline inline-flex items-center gap-1.5 max-w-[14rem]"
+                    title={userName || 'Mi perfil'}
+                  >
+                    <CircleUser className="h-4 w-4" />
+                    <span className="truncate">{userName || 'Mi perfil'}</span>
+                  </Link>
+                )}
+                <LogoutBtn />
+              </>
             )}
           </nav>
         </div>
       </header>
 
-      {/* MOBILE DRAWER */}
+      {/* MOBILE DRAWER (sin cambios funcionales) */}
       {open && (
         <div className="fixed inset-0 z-50 md:hidden" aria-modal="true" role="dialog">
-          {/* overlay */}
           <button
             className={`absolute inset-0 bg-black/50 transition-opacity duration-200 ${
               animateIn ? 'opacity-100' : 'opacity-0'
@@ -140,14 +150,11 @@ export default function HeaderClient({
             onClick={closeMenu}
             aria-label="Cerrar menú"
           />
-
-          {/* drawer con animación */}
           <aside
             className={`relative bg-white w-64 max-w-[80%] h-full shadow-xl flex flex-col transition-transform duration-200 ${
               animateIn ? 'translate-x-0' : '-translate-x-full'
             }`}
           >
-            {/* header del drawer */}
             <div className="flex items-center justify-between px-4 h-14 border-b">
               <div className="flex items-center gap-2">
                 <div className="h-7 w-7 rounded-md bg-[#1e40af] flex items-center justify-center">
@@ -167,7 +174,6 @@ export default function HeaderClient({
               </button>
             </div>
 
-            {/* links con íconos */}
             <nav className="flex-1 overflow-y-auto p-4 space-y-2">
               {navItems.map((item) => {
                 const Icon = getIcon(item.label);
@@ -186,9 +192,22 @@ export default function HeaderClient({
                   </Link>
                 );
               })}
+
+              {/* 👇 PERFIL (debajo de Usuarios) */}
+              {loggedIn && userId && (
+                <Link
+                  href={`/usuarios/${userId}`}
+                  onClick={closeMenu}
+                  className="flex items-center justify-between rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50"
+                >
+                  <span className="inline-flex items-center gap-1.5">
+                    <CircleUser className="h-4 w-4 text-[#1e40af]" />
+                    {userName || 'Mi perfil'}
+                  </span>
+                </Link>
+              )}
             </nav>
 
-            {/* footer */}
             <div className="border-t p-4">
               {!loggedIn ? (
                 <Link

@@ -173,13 +173,18 @@ export default async function AdminAlumnosPage({ searchParams }: Search) {
       dni: true,
       email: true,
       celular: true,
-      role: true, // en teoría siempre ALUMNO (pero si ADMIN lo cambia, sirve para reflejarlo)
+      role: true,
       egresado: true,
       fechaRindio: true,
       nota: true,
-      proyectos: { select: { id: true, titulo: true }, take: 1 },
+      proyectos: {
+        where: { isActive: true },          // 👈 solo proyecto ACTIVO
+        select: { id: true, titulo: true },
+        take: 1,
+      },
     },
   });
+
 
   const totalPages = Math.max(Math.ceil(total / perPage), 1);
 
@@ -253,7 +258,9 @@ export default async function AdminAlumnosPage({ searchParams }: Search) {
                 key={u.id}
                 className="bg-white rounded-lg shadow-sm p-3 border"
               >
-                <div className="font-semibold text-primary">{u.nombre}</div>
+                <Link href={`/usuarios/${u.id}`} className="font-semibold text-primary hover:underline">
+                  {u.nombre}
+                </Link>
                 <div className="text-sm font-bold">
                   DNI: <span className="text-gray-700">{u.dni ?? '-'}</span>
                 </div>
@@ -328,9 +335,9 @@ export default async function AdminAlumnosPage({ searchParams }: Search) {
                 key={u.id}
                 className="bg-white rounded-lg shadow-sm p-4 border"
               >
-                <div className="font-semibold text-primary mb-1">
+                <Link href={`/usuarios/${u.id}`} className="font-semibold text-primary hover:underline">
                   {u.nombre}
-                </div>
+                </Link>
                 <div className="text-sm">
                   <span className="font-semibold">DNI: </span>
                   <span className="text-gray-700">{u.dni ?? '-'}</span>
@@ -423,7 +430,11 @@ export default async function AdminAlumnosPage({ searchParams }: Search) {
               ) : (
                 activos.map((u) => (
                   <tr key={u.id} className="border-t align-middle">
-                    <td className="p-3 font-medium">{u.nombre}</td>
+                    <td className="p-3 font-medium">
+                      <Link href={`/usuarios/${u.id}`} className="text-blue-700 hover:underline">
+                        {u.nombre}
+                      </Link>
+                    </td>
                     <td className="p-3 whitespace-nowrap">
                       {u.dni ?? '-'}
                     </td>

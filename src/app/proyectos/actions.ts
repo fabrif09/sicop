@@ -199,9 +199,12 @@ export async function registrarDocumento(input: {
   // Regla de negocio:
   //   - Si el proyecto está PROPUESTO => solo PROPUESTA.
   //   - Si está APROBADO => permitir PDF_FINAL y PRESENTACION (además de PROPUESTA/OTRO).
-  if (p.estado === 'PROPUESTO' && input.tipo !== 'PROPUESTA') {
-    throw new Error('Hasta que el proyecto no esté APROBADO, solo se puede subir la PROPUESTA.');
-  }
+  const isHistoriaAcademica =
+  input.tipo === ('OTRO' as any) && typeof input.key === 'string' && input.key.includes('/historia_academica/');
+
+if (p.estado === ('PROPUESTO' as any) && !(input.tipo === ('PROPUESTA' as any) || isHistoriaAcademica)) {
+  throw new Error('Hasta que el proyecto no esté APROBADO, solo se puede subir la PROPUESTA (y la Historia Académica).');
+}
 
   const safeKey = sanitizeKey(input.key);
 
@@ -337,9 +340,17 @@ export async function aprobarProyecto(proyectoId: string, comentario?: string) {
 
 export async function rechazarProyecto(proyectoId: string, motivo?: string) {
   await requireProfOrAdmin();
+
   const session = await getServerSession(authOptions);
   const aprobadorId = (session?.user as any)?.id as string;
 
+  // Motivo obligatorio
+  if (!motivo || !motivo.trim()) {
+    throw new Error('Debés ingresar un motivo de rechazo.');
+  }
+  const motivoTrim = motivo.trim();
+
+  // Cambia estado + soft delete
   const p = await prisma.proyecto.update({
     where: { id: proyectoId },
     data: {
@@ -351,15 +362,18 @@ export async function rechazarProyecto(proyectoId: string, motivo?: string) {
     select: { id: true },
   });
 
-  // 💬 guardar comentario si vino
+  //  Guardar comentario con motivo
   await crearComentarioProyecto({
     proyectoId,
     autorId: aprobadorId,
     tipo: 'RECHAZO',
-    texto: motivo ?? '',
+    texto: motivoTrim,
   });
 
-  await log('RECHAZAR_PROYECTO', aprobadorId, p.id, { motivo });
+  //  Audit log
+  await log('RECHAZAR_PROYECTO', aprobadorId, p.id, { motivo: motivoTrim });
+
+  // Revalidate
   revalidatePath(`/proyectos/${proyectoId}`);
   revalidatePath('/proyectos');
 }
@@ -370,7 +384,7 @@ export async function updateProyectoAlumno(input: {
   titulo: string;
   descripcion: string;
   funcionalidades: string[];
-  alumnoNombre?: string;   // si querés permitirlos, se ignoran si vienen vacíos
+  alumnoNombre?: string;   // se ignoran si vienen vacíos
   alumnoEmail?: string;
 }) {
   const session = await getServerSession(authOptions);
