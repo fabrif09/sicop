@@ -94,24 +94,47 @@ export default function DashboardContent({ email, nombre, rol }: Props) {
             >
               Lista Alumnos
             </Link>
+            <Link
+              href="/admin/logs"
+              className="btn w-full sm:w-auto text-center"
+            >
+              Ver Logs
+            </Link>
           </>
         )}
 
         {isProf && !isAdmin && (
           <>
             <Link
+              href="/materiales"
+              className="btn w-full sm:w-auto text-center"
+            >
+              Material Cátedra
+            </Link>
+            <Link
               href="/proyectos"
               className="btn w-full sm:w-auto text-center"
             >
-              Ver proyectos
+              Ver Proyectos
+            </Link>
+            <Link
+              href="/admin/usuarios"
+              className="btn w-full sm:w-auto text-center"
+            >
+              Lista Usuarios
             </Link>
             <Link
               href="/admin/alumnos"
               className="btn w-full sm:w-auto text-center"
             >
-              Lista alumnos
+              Lista Alumnos
             </Link>
-            <LogoutBtn />
+            <Link
+              href="/admin/logs"
+              className="btn w-full sm:w-auto text-center"
+            >
+              Ver Logs
+            </Link>
           </>
         )}
 

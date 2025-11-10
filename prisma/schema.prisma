@@ -126,9 +126,25 @@ enum AuditAction {
   EDITAR_PROYECTO
   BORRAR_PROYECTO
   DESCARGAR_PDF
-  // 👇 NUEVO
-  ELIMINAR_USUARIO
+  ELIMINAR_USUARIO           
+
+  // NUEVOS
+  CREAR_USUARIO
+  APROBAR_USUARIO
+  RECHAZAR_USUARIO
+  EDITAR_USUARIO
+  CAMBIAR_PASSWORD
+
+  // Materiales de cátedra
+  SUBIR_MATERIAL
+  REEMPLAZAR_MATERIAL
+  BORRAR_MATERIAL
+  DESCARGAR_MATERIAL
+
+  // Visualización (más explícito que DESCARGAR)
+  VER_PDF
 }
+
 
 
 model AuditLog {
@@ -142,7 +158,13 @@ model AuditLog {
   targetUser   User?        @relation("AuditTargetUser", fields: [targetUserId], references: [id])
   metadata     Json?
   createdAt    DateTime     @default(now())
+
+  @@index([createdAt, action])
+  @@index([userId, createdAt])
+  @@index([proyectoId, createdAt])
+  @@index([targetUserId, createdAt])
 }
+
 
 
 

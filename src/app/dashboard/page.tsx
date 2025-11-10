@@ -40,7 +40,7 @@ export default async function DashboardPage() {
         BIENVENIDO A SICOP!
       </h1>
 
-      <div className="w-full max-w-lg bg-white shadow-md rounded-lg p-6 space-y-6 mt-20">
+      <div className="w-full max-w-[80vw] bg-white shadow-md rounded-lg p-6 space-y-6 mt-20">
         <h2 className="text-2xl font-bold text-primary text-center">
           Dashboard
         </h2>

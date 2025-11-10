@@ -8,7 +8,9 @@ import Link from 'next/link';
 import { revalidatePath } from 'next/cache';
 import { FileText, FileCheck, Presentation, GraduationCap, File } from "lucide-react";
 
-export default async function ProyectoDetail({ params }: { params: { id: string } }) {
+export default async function ProyectoDetail({
+  params,
+}: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
   const userId = (session?.user as any)?.id as string | undefined;
   const role = (session?.user as any)?.role as 'ADMIN' | 'PROF' | 'ALUMNO' | undefined;
@@ -73,7 +75,7 @@ export default async function ProyectoDetail({ params }: { params: { id: string 
               </Link>
             </div>
 
-            {/* Título (ocupa toda la fila en mobile y se centra verticalmente en sm+) */}
+            {/* Título */}
             <h1
               className="
                 order-3 sm:order-2
@@ -84,7 +86,7 @@ export default async function ProyectoDetail({ params }: { params: { id: string 
               {proyecto.titulo}
             </h1>
 
-            {/* Editar (si corresponde) */}
+            {/* Editar */}
             {(isStaff || ownerCanEdit) && (
               <div className="order-2 sm:order-3 w-full sm:w-auto grid grid-cols-1 gap-2 text-center">
                 <Link
@@ -97,7 +99,7 @@ export default async function ProyectoDetail({ params }: { params: { id: string 
             )}
           </div>
 
-          {/* Meta: autor del proyecto con link al perfil */}
+          {/* Meta */}
           <div className="mt-2">
             <p className="text-sm text-gray-600">
               Subido por{' '}
@@ -154,7 +156,7 @@ export default async function ProyectoDetail({ params }: { params: { id: string 
                   className="border p-2 rounded flex-1 min-w-[180px]"
                   placeholder="Motivo (obligatorio)"
                   required
-                  pattern=".*\\S.*"
+                  pattern=".*\S.*"
                   title="Ingresá al menos un carácter no vacío."
                 />
                 <button type="submit" className="btn bg-red-600 hover:bg-red-700 w-full sm:w-auto">

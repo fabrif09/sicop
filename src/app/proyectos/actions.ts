@@ -1,10 +1,12 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
+import { AuditAction } from '@prisma/client';
 import { buildTextoIndexado } from '@/lib/textoIndexado';
 import { revalidatePath } from 'next/cache';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { logAudit } from '@/lib/audit';
 
 /* ===================== helpers ===================== */
 
@@ -237,8 +239,16 @@ if (p.estado === ('PROPUESTO' as any) && !(input.tipo === ('PROPUESTA' as any) |
     select: { id: true },
   });
 
-  await log('SUBIR_PDF', userId, input.proyectoId, {
-    key: safeKey, size: input.size, tipo: input.tipo, version: nextVersion,
+  await logAudit({
+    action: AuditAction.SUBIR_PDF,
+    userId, // ya lo obtuviste arriba con getSessionUser()
+    proyectoId: input.proyectoId,
+    metadata: {
+      tipo: input.tipo,
+      mime: input.mime,
+      size: input.size,
+      key: input.key,
+    },
   });
   revalidatePath(`/proyectos/${input.proyectoId}`);
   return doc;
@@ -267,6 +277,8 @@ export async function updateProyecto(input: {
   estado?: 'PROPUESTO' | 'APROBADO' | 'RECHAZADO';
 }) {
   await requireProfOrAdmin();
+  const session = await getServerSession(authOptions);
+  const editorId = (session?.user as any)?.id as string;
 
   if (!input.id) throw new Error('ID requerido');
 
@@ -299,6 +311,18 @@ export async function updateProyecto(input: {
       fechaCarga: fecha,
       textoIndexado,
       ...estadoData,
+    },
+  });
+
+  await logAudit({
+    action: AuditAction.EDITAR_PROYECTO,
+    userId: editorId,
+    proyectoId: input.id,
+    metadata: {
+      titulo: input.titulo,
+      descripcion: input.descripcion,
+      funcionalidades: input.funcionalidades,
+      estado: input.estado ?? null,
     },
   });
 
@@ -338,6 +362,12 @@ export async function aprobarProyecto(proyectoId: string, comentario?: string) {
   });
 
   await log('APROBAR_PROYECTO', aprobadorId, p.id);
+  await logAudit({
+  action: AuditAction.APROBAR_PROYECTO, // o RECHAZAR_PROYECTO
+  userId: aprobadorId,
+  proyectoId,
+  metadata: { comentario }, // o motivo
+});
   revalidatePath(`/proyectos/${proyectoId}`);
   revalidatePath('/proyectos');
 }
@@ -377,7 +407,12 @@ export async function rechazarProyecto(proyectoId: string, motivo?: string) {
 
   //  Audit log
   await log('RECHAZAR_PROYECTO', aprobadorId, p.id, { motivo: motivoTrim });
-
+  await logAudit({
+  action: AuditAction.RECHAZAR_PROYECTO,
+  userId: aprobadorId,
+  proyectoId,
+  metadata: { motivo }, 
+});
   // Revalidate
   revalidatePath(`/proyectos/${proyectoId}`);
   revalidatePath('/proyectos');
@@ -422,6 +457,18 @@ export async function updateProyectoAlumno(input: {
       descripcion: input.descripcion,
       funcionalidades: input.funcionalidades ?? [],
       textoIndexado,
+    },
+  });
+
+  await logAudit({
+    action: AuditAction.EDITAR_PROYECTO,
+    userId,
+    proyectoId: input.id,
+    metadata: {
+      titulo: input.titulo,
+      descripcion: input.descripcion,
+      funcionalidades: input.funcionalidades,
+      editedBy: 'ALUMNO',
     },
   });
 

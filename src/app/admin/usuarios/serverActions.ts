@@ -7,6 +7,7 @@ import { authOptions } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 import { Role, DocTipo, AuditAction } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { logAudit } from '@/lib/audit';
 
 async function requireStaff() {
   const session = await getServerSession(authOptions);
@@ -19,12 +20,15 @@ async function requireStaff() {
 /* ─────────────── APROBAR USUARIO ─────────────── */
 export async function aprobarUsuario(formData: FormData) {
   await requireStaff();
+  const session = await getServerSession(authOptions);
   const id = String(formData.get('id') || '');
   if (!id) throw new Error('ID requerido');
 
-  await prisma.user.update({
-    where: { id },
-    data: { isActive: true, approvedAt: new Date() },
+  await prisma.user.update({ where: { id }, data: { isActive: true, approvedAt: new Date() } });
+  await logAudit({
+    action: AuditAction.APROBAR_USUARIO,
+    userId: (session?.user as any)?.id!,
+    targetUserId: id,
   });
 
   revalidatePath('/admin/usuarios');
@@ -33,10 +37,16 @@ export async function aprobarUsuario(formData: FormData) {
 /* ─────────────── RECHAZAR USUARIO ─────────────── */
 export async function rechazarUsuario(formData: FormData) {
   await requireStaff();
+  const session = await getServerSession(authOptions);
   const id = String(formData.get('id') || '');
   if (!id) throw new Error('ID requerido');
 
   await prisma.user.delete({ where: { id } });
+  await logAudit({
+    action: AuditAction.RECHAZAR_USUARIO,
+    userId: (session?.user as any)?.id!,
+    targetUserId: id,
+  });
   revalidatePath('/admin/usuarios');
 }
 
@@ -45,11 +55,10 @@ export async function registrarDocumentoParaProyecto(formData: FormData) {
   await requireStaff();
 
   const proyectoId = String(formData.get('proyectoId') ?? '');
-  const url        = String(formData.get('key') ?? '');    // path S3/MinIO
+  const url        = String(formData.get('key') ?? '');
   const mime       = String(formData.get('mime') ?? '');
   const sizeStr    = String(formData.get('size') ?? '0');
 
-  // normalizamos el tipo recibido a enum DocTipo
   const tipoRaw = String(formData.get('tipo') ?? 'FINAL').toUpperCase() as keyof typeof DocTipo;
   const tipo: DocTipo = DocTipo[tipoRaw] ?? DocTipo.PDF_FINAL;
 
@@ -59,23 +68,33 @@ export async function registrarDocumentoParaProyecto(formData: FormData) {
 
   const size = Number(sizeStr) || 0;
 
-  // Traemos el owner del proyecto para registrar al alumno como "uploader"
   const proyecto = await prisma.proyecto.findUnique({
     where: { id: proyectoId },
     select: { ownerId: true },
   });
   if (!proyecto) throw new Error('Proyecto no encontrado');
 
-  // Creamos el documento usando el enum real (no string)
   await prisma.documento.create({
     data: {
       proyectoId,
-      url,     // guardás el path en tu bucket (antes llamado key)
+      url,
       mime,
       size,
-      tipo,    // <- ahora es DocTipo
-      uploadedById: proyecto.ownerId, // figura como subido por el alumno
+      tipo,
+      uploadedById: proyecto.ownerId,
     },
+  });
+
+  // 🔧 Agregá esto: obtené la session para usar su userId
+  const session = await getServerSession(authOptions);
+  const actorId = (session?.user as any)?.id as string | undefined;
+  if (!actorId) throw new Error('No autenticado');
+
+  await logAudit({
+    action: AuditAction.SUBIR_PDF,
+    userId: actorId,
+    proyectoId,
+    metadata: { tipo, mime, size, key: url },
   });
 
   revalidatePath('/proyectos');
@@ -214,6 +233,13 @@ export async function crearUsuarioManual(formData: FormData) {
       proyectoId = proyecto.id;
     }
 
+    await logAudit({
+      action: AuditAction.CREAR_USUARIO,
+      userId: (session?.user as any)?.id!,
+      targetUserId: user.id,
+      metadata: { role: user.role, email: user.email, dni: user.dni },
+    });
+
     revalidatePath('/admin/usuarios');
     return { ok: true, userId: user.id, proyectoId };
 
@@ -277,6 +303,61 @@ export async function eliminarUsuario(formData: FormData) {
       },
     }),
   ]);
+
+  revalidatePath('/admin/usuarios');
+}
+
+export async function guardarDatosAlumno(formData: FormData) {
+  'use server';
+
+  const session = await getServerSession(authOptions);
+  const viewerRole = (session?.user as any)?.role as Role | undefined;
+  if (!viewerRole || !['ADMIN', 'PROF'].includes(viewerRole)) {
+    throw new Error('No autorizado');
+  }
+
+  const id = String(formData.get('id') || '');
+  if (!id) throw new Error('Falta id');
+
+  const egresadoStr = String(formData.get('egresado') ?? '');
+  const egresado = egresadoStr === 'on' || egresadoStr === 'true';
+
+  const fechaStr = String(formData.get('fechaRindio') ?? '').trim();
+  const fechaRindio = fechaStr ? new Date(fechaStr) : null;
+  if (fechaRindio && Number.isNaN(fechaRindio.getTime())) {
+    throw new Error('Fecha rendida inválida');
+  }
+
+  const notaStr = String(formData.get('nota') ?? '').trim();
+  const nota = notaStr ? parseInt(notaStr, 10) : null;
+  if (nota !== null && (Number.isNaN(nota) || nota < 0 || nota > 10)) {
+    throw new Error('Nota inválida (0-10)');
+  }
+
+  const newRoleRaw = String(formData.get('role') ?? '').trim().toUpperCase();
+  const canChangeRole =
+    viewerRole === 'ADMIN' && ['ADMIN', 'PROF', 'ALUMNO'].includes(newRoleRaw);
+  const roleUpdate: Partial<{ role: Role }> = canChangeRole
+    ? { role: newRoleRaw as Role }
+    : {};
+
+  await prisma.user.update({
+    where: { id },
+    data: {
+      egresado,
+      fechaRindio: fechaRindio ?? null,
+      nota: nota ?? null,
+      ...roleUpdate,
+    },
+  });
+
+  await logAudit({
+    action: AuditAction.EDITAR_USUARIO,
+    userId: (session?.user as any)?.id!,
+    targetUserId: id,
+    metadata: { egresado, fechaRindio, nota, roleChangedTo: roleUpdate.role ?? undefined },
+  });
+
 
   revalidatePath('/admin/usuarios');
 }

@@ -4,61 +4,14 @@ import Link from 'next/link';
 import { Prisma, Role } from '@prisma/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { aprobarUsuario, crearUsuarioManual, rechazarUsuario, eliminarUsuario } from './serverActions';
+import { aprobarUsuario, crearUsuarioManual, rechazarUsuario, eliminarUsuario, guardarDatosAlumno } from './serverActions';
 import { revalidatePath } from 'next/cache';
 import EditUserModal from './EditUserModal';
 import FiltrosUsuariosClient from './FiltrosUsuariosClient';
 import CrearUsuarioClient from './CrearUsuarioClient';
 import ConfirmDelete from './ConfirmDelete';
+import { logAudit } from '@/lib/audit';
 
-
-/* ───────────────────────── Server Action: Guardar cambios ───────────────────────── */
-export async function guardarDatosAlumno(formData: FormData) {
-  'use server';
-
-  const session = await getServerSession(authOptions);
-  const viewerRole = (session?.user as any)?.role as Role | undefined;
-  if (!viewerRole || !['ADMIN', 'PROF'].includes(viewerRole)) {
-    throw new Error('No autorizado');
-  }
-
-  const id = String(formData.get('id') || '');
-  if (!id) throw new Error('Falta id');
-
-  const egresadoStr = String(formData.get('egresado') ?? '');
-  const egresado = egresadoStr === 'on' || egresadoStr === 'true';
-
-  const fechaStr = String(formData.get('fechaRindio') ?? '').trim();
-  const fechaRindio = fechaStr ? new Date(fechaStr) : null;
-  if (fechaRindio && Number.isNaN(fechaRindio.getTime())) {
-    throw new Error('Fecha rendida inválida');
-  }
-
-  const notaStr = String(formData.get('nota') ?? '').trim();
-  const nota = notaStr ? parseInt(notaStr, 10) : null;
-  if (nota !== null && (Number.isNaN(nota) || nota < 0 || nota > 10)) {
-    throw new Error('Nota inválida (0-10)');
-  }
-
-  const newRoleRaw = String(formData.get('role') ?? '').trim().toUpperCase();
-  const canChangeRole =
-    viewerRole === 'ADMIN' && ['ADMIN', 'PROF', 'ALUMNO'].includes(newRoleRaw);
-  const roleUpdate: Partial<{ role: Role }> = canChangeRole
-    ? { role: newRoleRaw as Role }
-    : {};
-
-  await prisma.user.update({
-    where: { id },
-    data: {
-      egresado,
-      fechaRindio: fechaRindio ?? null,
-      nota: nota ?? null,
-      ...roleUpdate,
-    },
-  });
-
-  revalidatePath('/admin/usuarios');
-}
 
 /* ───────────────────────────────── Página ───────────────────────────────── */
 type Search = {
