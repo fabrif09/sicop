@@ -1,13 +1,15 @@
+// src/app/admin/usuarios/page.tsx
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import { Prisma, Role } from '@prisma/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { aprobarUsuario, crearUsuarioManual, rechazarUsuario } from './serverActions';
+import { aprobarUsuario, crearUsuarioManual, rechazarUsuario, eliminarUsuario } from './serverActions';
 import { revalidatePath } from 'next/cache';
 import EditUserModal from './EditUserModal';
 import FiltrosUsuariosClient from './FiltrosUsuariosClient';
 import CrearUsuarioClient from './CrearUsuarioClient';
+import ConfirmDelete from './ConfirmDelete';
 
 
 /* ───────────────────────── Server Action: Guardar cambios ───────────────────────── */
@@ -77,6 +79,7 @@ type Search = {
 export default async function AdminUsuariosPage({ searchParams }: Search) {
   const session = await getServerSession(authOptions);
   const viewerRole = (session?.user as any)?.role as Role | undefined;
+  const viewerId = (session?.user as any)?.id as string | undefined; // ← 🔸 agregado
 
   if (!viewerRole || !['ADMIN', 'PROF'].includes(viewerRole)) {
     return (
@@ -103,7 +106,7 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
   const fProyecto = (sp?.proyecto ?? '').trim();
 
   const pendientes = await prisma.user.findMany({
-    where: { isActive: false },
+    where: { isActive: false, isDeleted: false },
     orderBy: { requestedAt: 'asc' },
     select: { id: true, email: true, nombre: true, requestedAt: true },
   });
@@ -173,7 +176,7 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
       fechaRindio: true,
       nota: true,
       proyectos: {
-        where: { isActive: true },          // 👈 solo proyecto ACTIVO
+        where: { isActive: true },          //  solo proyecto ACTIVO
         select: { id: true, titulo: true },
         take: 1,
       },
@@ -264,25 +267,25 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
                   DNI: <span className="text-gray-700">{u.dni ?? '-'}</span>
                 </div>
                 <div className="text-sm font-bold">
-                  Email:{' '}
+                  Email{' '}
                   <span className="text-gray-700 break-all">{u.email}</span>
                 </div>
                 <div className="text-sm font-bold">
-                  Celular:{' '}
+                  Celular{' '}
                   <span className="text-gray-700">{u.celular ?? '-'}</span>
                 </div>
                 <div className="text-sm font-bold">
-                  Rol:{' '}
+                  Rol{' '}
                   <span className="text-gray-700">{u.role}</span>
                 </div>
                 <div className="text-sm font-bold">
-                  Egresado:{' '}
+                  Egresado{' '}
                   <span className="text-gray-700">
                     {u.egresado ? 'Sí' : 'No'}
                   </span>
                 </div>
                 <div className="text-sm font-bold">
-                  Fecha rendida:{' '}
+                  Fecha rendida{' '}
                   <span className="text-gray-700">
                     {u.fechaRindio
                       ? u.fechaRindio.toLocaleDateString('es-AR')
@@ -290,11 +293,10 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
                   </span>
                 </div>
                 <div className="text-sm font-bold">
-                  Nota:{' '}
-                  <span className="text-gray-700">{u.nota ?? '-'}</span>
+                  Nota <span className="text-gray-700">{u.nota ?? '-'}</span>
                 </div>
                 <div className="text-sm font-bold">
-                  Proyecto:{' '}
+                  Proyecto{' '}
                   {u.proyectos[0] ? (
                     <Link
                       href={`/proyectos/${u.proyectos[0].id}`}
@@ -321,6 +323,11 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
                     triggerClassName="w-full"
                   />
                 </div>
+
+                {/* 🔴 ELIMINAR (solo ADMIN, no self, no ADMIN) */}
+                {viewerRole === 'ADMIN' && u.role !== 'ADMIN' && u.id !== viewerId && (
+                  <ConfirmDelete userId={u.id} />
+                )}
               </div>
             ))
           )}
@@ -403,13 +410,18 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
                     triggerClassName="w-full"
                   />
                 </div>
+
+                {/* 🔴 ELIMINAR (solo ADMIN, no self, no ADMIN) */}
+                {viewerRole === 'ADMIN' && u.role !== 'ADMIN' && u.id !== viewerId && (
+                  <ConfirmDelete userId={u.id} compact />
+                )}
               </div>
             ))
           )}
         </div>
 
         {/* Desktop / Tabla */}
-        <div className="hidden md:hidden md:block lg:block">
+        <div className="hidden lg:block">
           <table className="w-full border-collapse bg-white shadow-sm rounded-lg text-sm">
             <thead>
               <tr className="bg-blue-50 text-left font-semibold text-blue-800">
@@ -443,7 +455,7 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
                         {u.nombre}
                       </Link>
                     </td>
-                    <td className="p-3 whitespace-nowrap">
+                    <td className="p-3 whitespace-nowrap max-w-[5rem]">
                       {u.dni ?? '-'}
                     </td>
                     <td className="p-3 break-all">{u.email}</td>
@@ -466,7 +478,7 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
                       {u.proyectos[0] ? (
                         <Link
                           href={`/proyectos/${u.proyectos[0].id}`}
-                          className="text-blue-700 hover:underline truncate inline-block max-w-[18rem]"
+                          className="text-blue-700 hover:underline truncate inline-block max-w-[15rem]"
                           title={u.proyectos[0].titulo || 'Ver proyecto'}
                         >
                           {u.proyectos[0].titulo || 'Ver proyecto'}
@@ -479,17 +491,23 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
                     </td>
 
                     <td className="p-3">
-                      <EditUserModal
-                        user={{
-                          id: u.id,
-                          egresado: u.egresado,
-                          fechaRindio: u.fechaRindio,
-                          nota: u.nota,
-                          role: u.role,
-                        }}
-                        canEditRole={viewerRole === 'ADMIN'}
-                        onSave={guardarDatosAlumno}
-                      />
+                      <div className="flex flexD-col gap-2">
+                        <EditUserModal
+                          user={{
+                            id: u.id,
+                            egresado: u.egresado,
+                            fechaRindio: u.fechaRindio,
+                            nota: u.nota,
+                            role: u.role,
+                          }}
+                          canEditRole={viewerRole === 'ADMIN'}
+                          onSave={guardarDatosAlumno}
+                        />
+                        {/* 🔴 ELIMINAR (solo ADMIN, no self, no ADMIN) */}
+                        {viewerRole === 'ADMIN' && u.role !== 'ADMIN' && u.id !== viewerId && (
+                          <ConfirmDelete userId={u.id} compact />
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))

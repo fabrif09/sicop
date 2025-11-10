@@ -103,7 +103,7 @@ export default async function AdminAlumnosPage({ searchParams }: Search) {
 
   // Pendientes (solo ALUMNOS)
   const pendientes = await prisma.user.findMany({
-    where: { isActive: false, role: 'ALUMNO' },
+    where: { isActive: false, role: 'ALUMNO', isDeleted: false },
     orderBy: { requestedAt: 'asc' },
     select: { id: true, email: true, nombre: true, requestedAt: true },
   });

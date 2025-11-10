@@ -2,6 +2,7 @@
 
 import { useRef } from 'react';
 import type { Role } from '@prisma/client';
+import { Pencil  } from 'lucide-react';
 
 type UserForModal = {
   id: string;
@@ -33,10 +34,14 @@ export default function EditUserModal({
       <button
         type="button"
         onClick={open}
-        className={`btn bg-white text-blue-700 border border-blue-600 hover:bg-blue-50 ${triggerClassName}`}
+        className={`btn bg-white text-blue-700 border border-blue-600 hover:bg-blue-50
+                    ${triggerClassName} mb-3 md:mb-2 lg:mb-auto w-full
+                    flex items-center justify-center gap-2 hover:shadow-md transition-shadow hover:cursor-pointer`}
       >
-        Editar datos
+        <Pencil className="h-4 w-4 shrink-0 -mt-px" />
+        <span className="lg:whitespace-nowrap leading-none">Editar</span>
       </button>
+
 
       <dialog
         ref={ref}

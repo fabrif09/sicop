@@ -26,7 +26,7 @@ export default async function Header() {
 
   // datos para badges
   const [pendingUsers, pendingPropuestas] = await Promise.all([
-    prisma.user.count({ where: { isActive: false } }),
+    prisma.user.count({ where: { isActive: false, isDeleted: false } }),
     prisma.proyecto.count({ where: { estado: 'PROPUESTO', isActive: true } }),
   ]);
 

@@ -1,12 +1,12 @@
+// src/app/admin/usuarios/serverActions.ts
 'use server';
 
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
-import { Role, DocTipo } from '@prisma/client';
+import { Role, DocTipo, AuditAction } from '@prisma/client';
 import bcrypt from 'bcryptjs';
-
 
 async function requireStaff() {
   const session = await getServerSession(authOptions);
@@ -184,7 +184,6 @@ export async function crearUsuarioManual(formData: FormData) {
       const anio            = projectAnioStr ? parseInt(projectAnioStr, 10) : new Date().getFullYear();
       const fechaCarga      = projectFechaCargaStr ? new Date(projectFechaCargaStr) : new Date();
 
-      // 🔹 textoIndexado obligatorio
       const textoIndexado = [
         titulo,
         descripcion,
@@ -207,7 +206,7 @@ export async function crearUsuarioManual(formData: FormData) {
           anio,
           fechaCarga,
           ownerId: user.id,
-          textoIndexado, // ✅ campo obligatorio
+          textoIndexado,
         },
         select: { id: true },
       });
@@ -224,4 +223,60 @@ export async function crearUsuarioManual(formData: FormData) {
     }
     throw err;
   }
+}
+
+/* ─────────────── ELIMINAR USUARIO (ADMIN, soft-delete + audit) ─────────────── */
+export async function eliminarUsuario(formData: FormData) {
+  const session = await getServerSession(authOptions);
+  const actorId = (session?.user as any)?.id as string | undefined;
+  const actorRole = (session?.user as any)?.role as Role | undefined;
+
+  if (!actorId || actorRole !== 'ADMIN') {
+    throw new Error('No autorizado');
+  }
+
+  const id = String(formData.get('id') || '');
+  const motivo = String(formData.get('motivo') || '').trim();
+
+  if (!id) throw new Error('ID requerido');
+  if (!motivo || !/\S/.test(motivo)) throw new Error('Motivo obligatorio');
+
+  // No permitir auto-eliminarse
+  if (id === actorId) throw new Error('No podés eliminar tu propio usuario');
+
+  // Traer target para validar y loguear datos
+  const target = await prisma.user.findUnique({
+    where: { id },
+    select: { id: true, email: true, role: true, isDeleted: true },
+  });
+  if (!target) throw new Error('Usuario inexistente');
+  if (target.isDeleted) throw new Error('El usuario ya está eliminado');
+  // Evitar eliminar otro ADMIN (ajustá esta regla si querés permitirlo)
+  if (target.role === 'ADMIN') throw new Error('No se puede eliminar un ADMIN');
+
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: target.id },
+      data: {
+        isDeleted: true,
+        isActive: false,
+        deletedAt: new Date(),
+        deletedById: actorId,
+      },
+    }),
+    prisma.auditLog.create({
+      data: {
+        action: AuditAction.ELIMINAR_USUARIO,
+        userId: actorId,
+        targetUserId: target.id,
+        metadata: {
+          motivo,
+          targetEmail: target.email,
+          targetRole: target.role,
+        },
+      },
+    }),
+  ]);
+
+  revalidatePath('/admin/usuarios');
 }
