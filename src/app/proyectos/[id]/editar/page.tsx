@@ -46,7 +46,7 @@ export default async function EditProyecto({
             alumnoNombre: p.alumnoNombre,
             alumnoEmail: p.alumnoEmail,
             anio: p.anio,
-            fechaCarga: p.fechaCarga.toISOString().slice(0,10),
+            fechaCarga: p.fechaCarga.toLocaleDateString('es-AR'),
             estado: p.estado,
           }}
         />

@@ -201,7 +201,7 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
                   <div className="font-medium">{u.nombre}</div>
                   <div className="text-sm text-gray-600">{u.email}</div>
                   <div className="text-xs text-gray-500">
-                    Solicitado: {u.requestedAt.toISOString().slice(0, 10)}
+                    Solicitado: {u.requestedAt.toLocaleDateString('es-AR')}
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -285,7 +285,7 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
                   Fecha rendida:{' '}
                   <span className="text-gray-700">
                     {u.fechaRindio
-                      ? u.fechaRindio.toISOString().slice(0, 10)
+                      ? u.fechaRindio.toLocaleDateString('es-AR')
                       : '-'}
                   </span>
                 </div>
@@ -326,7 +326,7 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
           )}
         </div>
 
-        {/* ✅ Mediano (ventana dividida) — Cards en 2/3 columnas */}
+        {/* Mediano (ventana dividida) — Cards en 2/3 columnas */}
         <div className="hidden md:grid lg:hidden gap-3 md:grid-cols-2 xl:grid-cols-3">
           {activos.length === 0 ? (
             <div className="text-gray-600 md:col-span-2 xl:col-span-3">
@@ -367,7 +367,7 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
                   <span className="font-semibold">Fecha rendida: </span>
                   <span className="text-gray-700">
                     {u.fechaRindio
-                      ? u.fechaRindio.toISOString().slice(0, 10)
+                      ? u.fechaRindio.toLocaleDateString('es-AR')
                       : '-'}
                   </span>
                 </div>

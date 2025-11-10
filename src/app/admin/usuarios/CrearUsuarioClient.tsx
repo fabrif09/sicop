@@ -232,7 +232,7 @@ export default function CrearUsuarioClient({ viewerRole }: { viewerRole: string 
                      defaultValue={new Date().getFullYear()} />
               <input name="projectFechaCarga" type="date"
                      className="border bg-gray-50 p-2 rounded" disabled={isPending}
-                     defaultValue={new Date().toISOString().slice(0,10)} />
+                     defaultValue={new Date().toLocaleDateString('es-AR')} />
               <textarea name="projectDescripcion" placeholder="Descripción"
                         className="border bg-gray-50 p-2 rounded md:col-span-3" disabled={isPending} rows={3} />
               <input name="projectFuncionalidades"

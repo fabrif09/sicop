@@ -42,7 +42,7 @@ export default async function MaterialesPage() {
                   </div>
                   <div className="text-xs text-gray-500 mt-1">
                     {m.mime} — {(m.size / 1024).toFixed(0)} KB —{' '}
-                    {new Date(m.createdAt).toISOString().slice(0, 10)}
+                    {new Date(m.createdAt).toLocaleDateString('es-AR')}
                   </div>
                 </div>
 

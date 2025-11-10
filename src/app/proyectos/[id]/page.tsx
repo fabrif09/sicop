@@ -8,7 +8,6 @@ import Link from 'next/link';
 import { revalidatePath } from 'next/cache';
 import { FileText, FileCheck, Presentation, GraduationCap, File } from "lucide-react";
 
-
 export default async function ProyectoDetail({ params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
   const userId = (session?.user as any)?.id as string | undefined;
@@ -28,6 +27,7 @@ export default async function ProyectoDetail({ params }: { params: { id: string 
   const proyecto = await prisma.proyecto.findUnique({
     where: { id },
     include: {
+      owner: { select: { id: true, nombre: true } },
       documentos: true,
       aprobadoPor: { select: { nombre: true, email: true } },
       comentarios: {
@@ -51,23 +51,42 @@ export default async function ProyectoDetail({ params }: { params: { id: string 
   const isStaff = role === 'ADMIN' || role === 'PROF';
   const ownerCanEdit = isOwner && proyecto.estado === 'APROBADO';
 
-  // SOLO CAMBIO: destino y texto del botón "Volver"
   const backHref = isStaff ? '/proyectos' : '/mi-proyecto';
   const backText = isStaff ? '← Volver a Proyectos' : '← Volver a Mi Proyecto';
 
   return (
     <main className="min-h-[calc(100vh-13.75rem)] px-4 py-6">
       <div className="max-w-3xl mx-auto space-y-6">
-        <div className="bg-white shadow-md rounded-lg p-6">
-          {/* HEADER */}
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <Link href={backHref} className="btn btn-ghost mb-2">
-              {backText}
-            </Link>
-            <h1 className="text-2xl font-bold text-primary break-words">{proyecto.titulo}</h1>
+        <div className="bg-white shadow-md rounded-lg p-4 sm:p-5 md:p-6">
+          {/* HEADER (ahora grid responsiva, sin cambiar estética) */}
+          <div
+            className="
+              grid gap-3 items-start
+              grid-cols-1
+              sm:grid-cols-[auto,1fr,auto]
+            "
+          >
+            {/* Volver */}
+            <div className="order-1">
+              <Link href={backHref} className="btn btn-ghost w-full sm:w-auto">
+                {backText}
+              </Link>
+            </div>
 
+            {/* Título (ocupa toda la fila en mobile y se centra verticalmente en sm+) */}
+            <h1
+              className="
+                order-3 sm:order-2
+                text-2xl font-bold text-primary
+                break-words hyphens-auto
+              "
+            >
+              {proyecto.titulo}
+            </h1>
+
+            {/* Editar (si corresponde) */}
             {(isStaff || ownerCanEdit) && (
-              <div className="w-full sm:w-auto grid grid-cols-1 gap-2 text-center">
+              <div className="order-2 sm:order-3 w-full sm:w-auto grid grid-cols-1 gap-2 text-center">
                 <Link
                   className="btn w-full justify-center"
                   href={`/proyectos/${proyecto.id}/editar`}
@@ -76,6 +95,23 @@ export default async function ProyectoDetail({ params }: { params: { id: string 
                 </Link>
               </div>
             )}
+          </div>
+
+          {/* Meta: autor del proyecto con link al perfil */}
+          <div className="mt-2">
+            <p className="text-sm text-gray-600">
+              Subido por{' '}
+              {proyecto.owner ? (
+                <Link
+                  href={`/usuarios/${proyecto.owner.id}`}
+                  className="text-blue-700 hover:underline font-medium break-words"
+                >
+                  {proyecto.owner.nombre || 'Usuario'}
+                </Link>
+              ) : (
+                '—'
+              )}
+            </p>
           </div>
 
           {/* --- BLOQUE APROBAR/RECHAZAR --- */}
@@ -108,7 +144,7 @@ export default async function ProyectoDetail({ params }: { params: { id: string 
                   'use server';
                   const motivo = String(formData.get('motivo') || '');
                   const { rechazarProyecto } = await import('../actions');
-                  await rechazarProyecto(proyecto.id, motivo); // el server valida también
+                  await rechazarProyecto(proyecto.id, motivo);
                   revalidatePath(`/proyectos/${proyecto.id}`);
                 }}
                 className="flex flex-wrap items-center gap-2 w-full sm:w-auto"
@@ -118,8 +154,7 @@ export default async function ProyectoDetail({ params }: { params: { id: string 
                   className="border p-2 rounded flex-1 min-w-[180px]"
                   placeholder="Motivo (obligatorio)"
                   required
-                  // exige al menos un caracter no espacio
-                  pattern=".*\S.*"
+                  pattern=".*\\S.*"
                   title="Ingresá al menos un carácter no vacío."
                 />
                 <button type="submit" className="btn bg-red-600 hover:bg-red-700 w-full sm:w-auto">
@@ -130,7 +165,7 @@ export default async function ProyectoDetail({ params }: { params: { id: string 
           )}
 
           {/* --- DETALLES --- */}
-          <div className="mt-6 space-y-4">
+          <div className="mt-6 space-y-5">
             {/* ESTADO Y FECHA DE APROBACIÓN */}
             <section>
               <h4 className="text-lg font-semibold">Estado</h4>
@@ -158,7 +193,7 @@ export default async function ProyectoDetail({ params }: { params: { id: string 
                     })}
                     {proyecto.aprobadoPor?.nombre && (
                       <>
-                        {' '}por <b>{proyecto.aprobadoPor.nombre}</b>
+                        {' '}por <b className="break-words">{proyecto.aprobadoPor.nombre}</b>
                       </>
                     )}
                     )
@@ -169,14 +204,16 @@ export default async function ProyectoDetail({ params }: { params: { id: string 
 
             <section>
               <h4 className="text-lg font-semibold">Descripción</h4>
-              <p className="text-gray-700 mt-1">{proyecto.descripcion}</p>
+              <p className="text-gray-700 mt-1 break-words whitespace-pre-wrap">
+                {proyecto.descripcion}
+              </p>
             </section>
 
             <section>
               <h4 className="text-lg font-semibold">Funcionalidades</h4>
-              <ul className="list-disc list-inside text-gray-800 mt-1">
+              <ul className="list-disc list-inside text-gray-800 mt-1 space-y-1">
                 {proyecto.funcionalidades.map((f, i) => (
-                  <li key={i}>{f}</li>
+                  <li key={i} className="break-words">{f}</li>
                 ))}
               </ul>
             </section>
@@ -186,13 +223,11 @@ export default async function ProyectoDetail({ params }: { params: { id: string 
 
               <ul className="space-y-2 mt-1">
                 {proyecto.documentos.map((doc) => {
-                  // Etiqueta solo de render (no toca DB)
                   const label =
                     doc.tipo === 'OTRO' && doc.url.includes('/historia_academica/')
                       ? 'HISTORIA_ACADEMICA'
                       : doc.tipo;
 
-                  // Icono por etiqueta
                   const iconByLabel: Record<string, React.ComponentType<{ className?: string }>> = {
                     PROPUESTA: FileText,
                     PDF_FINAL: FileCheck,
@@ -201,18 +236,17 @@ export default async function ProyectoDetail({ params }: { params: { id: string 
                   };
                   const Icon = iconByLabel[label] ?? File;
 
-                  // Color sutil por tipo (solo estética)
                   const colorClass =
                     label === 'PROPUESTA' ? 'text-blue-600'
-                    : label === 'PDF_FINAL' ? 'text-emerald-600'
-                    : label === 'PRESENTACION' ? 'text-violet-600'
-                    : label === 'HISTORIA_ACADEMICA' ? 'text-amber-600'
-                    : 'text-gray-600';
+                      : label === 'PDF_FINAL' ? 'text-emerald-600'
+                      : label === 'PRESENTACION' ? 'text-violet-600'
+                      : label === 'HISTORIA_ACADEMICA' ? 'text-amber-600'
+                      : 'text-gray-600';
 
                   return (
                     <li
                       key={doc.id}
-                      className="border p-3 rounded flex flex-wrap items-center justify-between hover:bg-gray-50 gap-2"
+                      className="border p-3 rounded flex flex-wrap items-center justify-between hover:bg-gray-50 gap-3"
                     >
                       <div className="min-w-0 flex-1 flex items-start gap-2">
                         <Icon className={`mt-0.5 h-5 w-5 shrink-0 ${colorClass}`} />
@@ -220,10 +254,12 @@ export default async function ProyectoDetail({ params }: { params: { id: string 
                           <div className="font-medium break-words">
                             {label} — v{doc.version} — {(doc.size / 1024).toFixed(1)} KB
                           </div>
-                          <div className="text-sm text-gray-600">{doc.mime}</div>
+                          <div className="text-sm text-gray-600 break-all">
+                            {doc.mime}
+                          </div>
                         </div>
                       </div>
-                      <div className="shrink-0">
+                      <div className="shrink-0 w-full sm:w-auto">
                         <VerPdfBtn keyS3={doc.url} />
                       </div>
                     </li>
@@ -233,11 +269,8 @@ export default async function ProyectoDetail({ params }: { params: { id: string 
                 {proyecto.documentos.length === 0 && <li className="text-gray-600">Sin documentos.</li>}
               </ul>
 
-              {/* Uploaders SOLO una vez, fuera de la lista */}
               {(isOwner || isStaff) && (
                 <div className="mt-4">
-                  {/*  Mobile: cada form del uploader en 1 columna (archivo arriba, botón abajo).
-                      Desktop: dos columnas (archivo 1fr, botón auto). */}
                   <div
                     className="
                       [&_form]:grid
@@ -264,7 +297,6 @@ export default async function ProyectoDetail({ params }: { params: { id: string 
             <section className="mt-6">
               <h4 className="text-lg font-semibold">Comentarios de Profesores</h4>
 
-              {/*  Form para que STAFF agregue comentarios */}
               {isStaff && (
                 <form
                   action={async (formData: FormData) => {
@@ -275,13 +307,13 @@ export default async function ProyectoDetail({ params }: { params: { id: string 
                     const tipo = String(formData.get('tipo') || 'FEEDBACK');
 
                     if (!autorId) throw new Error('No autenticado');
-                    if (!texto) return; // no guardamos vacíos
+                    if (!texto) return;
 
                     await prisma.proyectoComentario.create({
                       data: {
                         proyectoId: proyecto.id,
                         autorId,
-                        tipo: tipo as any, // 'GENERAL' | 'APROBACION' | 'RECHAZO'
+                        tipo: tipo as any,
                         texto,
                       },
                     });
@@ -330,11 +362,13 @@ export default async function ProyectoDetail({ params }: { params: { id: string 
                         >
                           {c.tipo}
                         </span>
-                        {c.autor?.nombre ? c.autor.nombre : 'Staff'}
+                        <span className="break-words">
+                          {c.autor?.nombre ? c.autor.nombre : 'Staff'}
+                        </span>
                         {' — '}
                         {new Date(c.createdAt).toLocaleString('es-AR')}
                       </div>
-                      <p className="mt-1 text-gray-800 whitespace-pre-line break-words text-wrap">
+                      <p className="mt-1 text-gray-800 whitespace-pre-line break-words">
                         {c.texto}
                       </p>
                     </li>

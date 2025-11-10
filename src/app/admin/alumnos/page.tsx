@@ -206,7 +206,7 @@ export default async function AdminAlumnosPage({ searchParams }: Search) {
                   <div className="font-medium">{u.nombre}</div>
                   <div className="text-sm text-gray-600">{u.email}</div>
                   <div className="text-xs text-gray-500">
-                    Solicitado: {u.requestedAt.toISOString().slice(0, 10)}
+                    Solicitado: {u.requestedAt.toLocaleDateString('es-AR')}
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -282,7 +282,7 @@ export default async function AdminAlumnosPage({ searchParams }: Search) {
                   Fecha rendida:{' '}
                   <span className="text-gray-700">
                     {u.fechaRindio
-                      ? u.fechaRindio.toISOString().slice(0, 10)
+                      ? u.fechaRindio.toLocaleDateString('es-AR')
                       : '-'}
                   </span>
                 </div>
@@ -360,7 +360,7 @@ export default async function AdminAlumnosPage({ searchParams }: Search) {
                   <span className="font-semibold">Fecha rendida: </span>
                   <span className="text-gray-700">
                     {u.fechaRindio
-                      ? u.fechaRindio.toISOString().slice(0, 10)
+                      ? u.fechaRindio.toLocaleDateString('es-AR')
                       : '-'}
                   </span>
                 </div>

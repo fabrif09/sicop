@@ -73,7 +73,7 @@ export default function EditUserModal({
                 type="date"
                 name="fechaRindio"
                 defaultValue={
-                  user.fechaRindio ? new Date(user.fechaRindio).toISOString().slice(0, 10) : ''
+                  user.fechaRindio ? new Date(user.fechaRindio).toLocaleDateString('es-AR') : ''
                 }
                 className="mt-1 w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
               />

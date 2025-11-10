@@ -1,3 +1,4 @@
+// src/app/proyectos/page.tsx
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import { getServerSession } from 'next-auth';
@@ -30,15 +31,32 @@ export default async function ProyectosPage({ searchParams }: Search) {
   const perPage = 10;
   const offset = (page - 1) * perPage;
 
-  type Row = { id: string; titulo: string; alumnoNombre: string; fechaCarga: Date; anio: number; score?: number };
+  // Tipado flexible para soportar ambos caminos (raw + findMany)
+  type Row = {
+    id: string;
+    titulo: string;
+    alumnoNombre: string;
+    fechaCarga: Date;
+    anio: number;
+    score?: number;
+    ownerId?: string | null;
+    owner?: { id: string; nombre: string | null } | null;
+  };
 
   //  Proyectos pendientes (arriba de todo)
   const pendientes = await prisma.proyecto.findMany({
-    where: { estado: 'PROPUESTO' as any, isActive: true }, // ⬅️ NUEVO
+    where: { estado: 'PROPUESTO' as any, isActive: true },
     orderBy: { createdAt: 'asc' },
-    select: { id: true, titulo: true, alumnoNombre: true, fechaCarga: true },
+    select: {
+      id: true,
+      titulo: true,
+      alumnoNombre: true,
+      fechaCarga: true,
+      // 👇 agregado para poder linkear al perfil
+      ownerId: true,
+      owner: { select: { id: true, nombre: true } },
+    },
   });
-
 
   let proyectos: Row[] = [];
   let total = 0;
@@ -60,10 +78,16 @@ export default async function ProyectosPage({ searchParams }: Search) {
     `;
     total = countRows[0]?.count ?? 0;
 
-    // página
+    // página (👈 incluimos ownerId para poder linkear al perfil)
     proyectos = await prisma.$queryRaw<Row[]>`
-      SELECT p.id, p.titulo, p."alumnoNombre", p."fechaCarga", p."anio",
-             similarity(p."textoIndexado", ${texto}) AS score
+      SELECT
+        p.id,
+        p.titulo,
+        p."alumnoNombre",
+        p."fechaCarga",
+        p."anio",
+        p."ownerId" as "ownerId",
+        similarity(p."textoIndexado", ${texto}) AS score
       FROM "Proyecto" AS p
       WHERE p."estado" = 'APROBADO'
         AND p.isActive = true
@@ -84,7 +108,16 @@ export default async function ProyectosPage({ searchParams }: Search) {
     proyectos = await prisma.proyecto.findMany({
       where,
       orderBy: { createdAt: 'desc' },
-      select: { id: true, titulo: true, alumnoNombre: true, fechaCarga: true, anio: true },
+      select: {
+        id: true,
+        titulo: true,
+        alumnoNombre: true,
+        fechaCarga: true,
+        anio: true,
+        // 👇 agregados para linkear
+        ownerId: true,
+        owner: { select: { id: true, nombre: true } },
+      },
       skip: offset,
       take: perPage,
     });
@@ -101,6 +134,18 @@ export default async function ProyectosPage({ searchParams }: Search) {
     const qs = params.toString();
     return `/proyectos${qs ? `?${qs}` : ''}`;
   }
+
+  // helper para renderizar el link al perfil sin cambiar la estética
+  const OwnerLink = ({ row }: { row: Row }) => {
+    const ownerId = row.owner?.id ?? row.ownerId;
+    const ownerName = row.owner?.nombre ?? row.alumnoNombre;
+    if (!ownerId) return <>{ownerName}</>;
+    return (
+      <Link href={`/usuarios/${ownerId}`} className="text-blue-700 hover:underline">
+        {ownerName || 'Usuario'}
+      </Link>
+    );
+  };
 
   return (
     <main className="min-h-[calc(100vh-13.75rem)] px-4 py-6">
@@ -129,10 +174,17 @@ export default async function ProyectosPage({ searchParams }: Search) {
                       </Link>
                     </div>
                     <div className="text-sm text-gray-600">
-                      Alumno: {p.alumnoNombre}
+                      Alumno:{' '}
+                      {p.owner ? (
+                        <Link href={`/usuarios/${p.owner.id}`} className="text-blue-700 hover:underline">
+                          {p.owner.nombre || p.alumnoNombre}
+                        </Link>
+                      ) : (
+                        p.alumnoNombre
+                      )}
                     </div>
                     <div className="text-xs text-gray-500">
-                      Cargado: {new Date(p.fechaCarga).toISOString().slice(0, 10)}
+                      Cargado: {new Date(p.fechaCarga).toLocaleDateString('es-AR')}
                     </div>
                   </div>
                   <Link href={`/proyectos/${p.id}`} className="btn">
@@ -199,10 +251,10 @@ export default async function ProyectosPage({ searchParams }: Search) {
                     {p.titulo}
                   </Link>
                   <div className="text-sm text-gray-600 mt-1">
-                    Alumno: {p.alumnoNombre} — Año: {p.anio} — Fecha:{' '}
-                    {new Date(p.fechaCarga).toISOString().slice(0, 10)}
-                    {typeof (p as any).score === 'number' && (
-                      <> — Score: {(p as any).score.toFixed(2)}</>
+                    Alumno:{' '}<OwnerLink row={p} /> — Año: {p.anio} — Fecha:{' '}
+                    {new Date(p.fechaCarga).toLocaleDateString('es-AR')}
+                    {typeof p.score === 'number' && (
+                      <> — Score: {p.score.toFixed(2)}</>
                     )}
                   </div>
                 </div>

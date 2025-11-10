@@ -78,9 +78,9 @@ export async function buscarProyectos(input: { q: string; limit?: number; umbral
   const umbral = input.umbral ?? 0.30;
 
   const rows = await prisma.$queryRaw<
-    { id: string; titulo: string; alumnoNombre: string; fechaCarga: Date; anio: number; score: number }[]
+    { id: string; titulo: string; alumnoNombre: string; fechaCarga: Date; anio: number; score: number; ownerId: string }[]
   >`
-    SELECT p.id, p.titulo, p."alumnoNombre", p."fechaCarga", p."anio",
+    SELECT p.id, p.titulo, p."alumnoNombre", p."fechaCarga", p."anio", p."ownerId",
            similarity(p."textoIndexado", ${qIndex}) AS score
     FROM "Proyecto" AS p
     WHERE (p."textoIndexado" % ${qIndex} AND similarity(p."textoIndexado", ${qIndex}) >= ${umbral})
@@ -116,14 +116,13 @@ export async function buscarSimilaresTrgm(input: {
 /* ===================== CRUD proyecto ===================== */
 
 // Crear proyecto (queda PROPUESTO por default en el schema)
+// Crear proyecto (queda PROPUESTO por default en el schema)
 export async function createProyecto(input: {
   titulo: string; descripcion: string; funcionalidades: string[];
-  alumnoNombre: string; alumnoEmail: string;
-  anio: number; fechaCarga: string;
+  anio: number; fechaCarga: string; // ⬅️ quitamos alumnoNombre / alumnoEmail
 }) {
   const { userId, role } = await getSessionUser();
 
-  // ⬇️ Solo alumnos pueden crear
   if (role !== 'ALUMNO') {
     throw new Error('Solo los alumnos pueden crear proyectos.');
   }
@@ -137,14 +136,21 @@ export async function createProyecto(input: {
   }
 
   if (!input.titulo?.trim() || !input.descripcion?.trim()) throw new Error('Título y descripción son obligatorios');
-  if (!input.alumnoNombre?.trim() || !input.alumnoEmail?.trim()) throw new Error('Datos del alumno obligatorios');
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.alumnoEmail)) throw new Error('Email inválido');
   if (!input.fechaCarga) throw new Error('La fecha de carga es obligatoria');
 
   const fecha = new Date(input.fechaCarga);
   if (Number.isNaN(fecha.getTime())) throw new Error('Fecha de carga inválida');
   const hoy = new Date(); hoy.setHours(0,0,0,0);
   if (fecha > hoy) throw new Error('La fecha de carga no puede ser futura');
+
+  // ⬇️ Traemos nombre/email del usuario logueado
+  const owner = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { nombre: true, email: true },
+  });
+  if (!owner?.nombre || !owner?.email) {
+    throw new Error('Tu perfil no tiene nombre o email configurado.');
+  }
 
   const textoIndexado = buildTextoIndexado(input.titulo, input.descripcion, input.funcionalidades);
 
@@ -153,13 +159,12 @@ export async function createProyecto(input: {
       titulo: input.titulo,
       descripcion: input.descripcion,
       funcionalidades: input.funcionalidades,
-      alumnoNombre: input.alumnoNombre,
-      alumnoEmail: input.alumnoEmail,
+      alumnoNombre: owner.nombre,    // ⬅️ desde el perfil
+      alumnoEmail: owner.email,      // ⬅️ desde el perfil
       anio: input.anio,
       fechaCarga: fecha,
       textoIndexado,
-      ownerId: userId,           // dueño = alumno
-      // estado por defecto ya es PROPUESTO en el schema
+      ownerId: userId,               // ⬅️ dueño = alumno logueado
     },
     select: { id: true },
   });
