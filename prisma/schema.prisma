@@ -28,34 +28,42 @@ enum DocTipo {
 
 model User {
   id           String    @id @default(cuid())
-  email        String?    @unique
+  email        String?   @unique
   nombre       String
   passwordHash String?
   role         Role      @default(ALUMNO)
   isActive     Boolean   @default(false)
   requestedAt  DateTime  @default(now())
   approvedAt   DateTime?
-  // --- NUEVOS ---
   celular      String?
   dni          String?   @unique
   fechaRindio  DateTime?
   nota         Int?
   egresado     Boolean   @default(false)
-  // --------------
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   proyectos    Proyecto[]  @relation("OwnerProyectos")
   aprobaciones Proyecto[]  @relation("AprobadorProyectos")
   documentos   Documento[] @relation("UploaderDocs")
   logs         AuditLog[]
-
   materialesSubidos MaterialCatedra[] @relation("UploaderMateriales")
-  
   comentariosProyecto ProyectoComentario[]
 
+  // 👇 Soft-delete + trazabilidad
+  isDeleted    Boolean   @default(false)
+  deletedAt    DateTime?
+  deletedById  String?
+  deletedBy    User?     @relation("UserDeletedBy", fields: [deletedById], references: [id])
+  // 👇 lado inverso (quiénes fueron eliminados por este usuario)
+  deletedUsers User[]    @relation("UserDeletedBy")
+
+  // 👇 lado inverso para los logs de eliminación (targetUser)
+  auditTargetOf AuditLog[] @relation("AuditTargetUser")
 }
+
+
+
 
 model Proyecto {
   id              String   @id @default(cuid())
@@ -118,18 +126,25 @@ enum AuditAction {
   EDITAR_PROYECTO
   BORRAR_PROYECTO
   DESCARGAR_PDF
+  // 👇 NUEVO
+  ELIMINAR_USUARIO
 }
 
+
 model AuditLog {
-  id         String      @id @default(cuid())
-  action     AuditAction
-  userId     String
-  user       User        @relation(fields: [userId], references: [id])
-  proyectoId String?
-  proyecto   Proyecto?   @relation(fields: [proyectoId], references: [id])
-  metadata   Json?
-  createdAt  DateTime    @default(now())
+  id           String       @id @default(cuid())
+  action       AuditAction
+  userId       String
+  user         User         @relation(fields: [userId], references: [id])
+  proyectoId   String?
+  proyecto     Proyecto?    @relation(fields: [proyectoId], references: [id])
+  targetUserId String?
+  targetUser   User?        @relation("AuditTargetUser", fields: [targetUserId], references: [id])
+  metadata     Json?
+  createdAt    DateTime     @default(now())
 }
+
+
 
 model MaterialCatedra {
   id          String  @id @default(cuid())
