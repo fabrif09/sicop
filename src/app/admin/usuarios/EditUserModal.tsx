@@ -41,8 +41,7 @@ export default function EditUserModal({
         <Pencil className="h-4 w-4 shrink-0 -mt-px" />
         <span className="lg:whitespace-nowrap leading-none">Editar</span>
       </button>
-
-
+      
       <dialog
         ref={ref}
         className="rounded-xl p-2 backdrop:bg-black/50  w-[min(92vw,520px)] fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"

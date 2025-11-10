@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import Link from 'next/link';
+import ChangePasswordForm from './ChangePasswordForm';
 import {
   ArrowLeft, User as UserIcon, Mail, IdCard, Phone, Shield,
   GraduationCap, CalendarCheck, Award, Folder, FolderX, FileText
@@ -24,7 +25,7 @@ export default async function PerfilUsuarioPage({
   const session = await getServerSession(authOptions);
   const viewerId = (session?.user as any)?.id as string | undefined;
   const viewerRole = (session?.user as any)?.role as 'ADMIN' | 'PROF' | 'ALUMNO' | undefined;
-
+  
   if (!viewerId) {
     return (
       <main className="min-h-screen flex items-center justify-center px-4">
@@ -56,7 +57,8 @@ export default async function PerfilUsuarioPage({
       proyectos: {
         orderBy: { createdAt: 'desc' },
         select: { id: true, titulo: true, estado: true, isActive: true, fechaCarga: true },
-      }
+      },
+      passwordHash: true, // ← se usa solo para calcular hasPassword
     }
   });
 
@@ -72,6 +74,9 @@ export default async function PerfilUsuarioPage({
 
   const activos = u.proyectos.filter(p => p.isActive === true);
   const rechazados = u.proyectos.filter(p => p.isActive === false || p.estado === 'RECHAZADO');
+
+  // ← NUEVO: permiso para cambiar contraseña (propietario o ADMIN)
+  const canChangePassword = viewerId === u.id;
 
   return (
     <main className="min-h-[calc(100vh-13.75rem)] px-4 py-6">
@@ -146,6 +151,11 @@ export default async function PerfilUsuarioPage({
           </div>
         </section>
 
+        {/* ← NUEVO: Formulario cambiar contraseña (sin alterar estética existente) */}
+        {canChangePassword && (
+          <ChangePasswordForm userId={u.id} hasPassword={!!u.passwordHash} />
+        )}
+
         {/* Proyectos activos */}
         <section className="space-y-3">
           <div className="flex items-center gap-2">
@@ -190,7 +200,7 @@ export default async function PerfilUsuarioPage({
             <h2 className="text-xl font-bold text-primary">Rechazados</h2>
           </div>
 
-          {rechazados.length === 0 ? (
+        {rechazados.length === 0 ? (
             <div className="text-gray-600 bg-white p-4 rounded-lg shadow-sm">No tiene rechazados.</div>
           ) : (
             <ul className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
