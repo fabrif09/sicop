@@ -8,6 +8,7 @@ import { revalidatePath } from 'next/cache';
 import { Role, DocTipo, AuditAction } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { logAudit } from '@/lib/audit';
+import { notifyAccountApproved, notifyAccountRejected } from '@/lib/notifier';
 
 async function requireStaff() {
   const session = await getServerSession(authOptions);
@@ -25,6 +26,7 @@ export async function aprobarUsuario(formData: FormData) {
   if (!id) throw new Error('ID requerido');
 
   await prisma.user.update({ where: { id }, data: { isActive: true, approvedAt: new Date() } });
+  await notifyAccountApproved(id);
   await logAudit({
     action: AuditAction.APROBAR_USUARIO,
     userId: (session?.user as any)?.id!,
@@ -41,7 +43,22 @@ export async function rechazarUsuario(formData: FormData) {
   const id = String(formData.get('id') || '');
   if (!id) throw new Error('ID requerido');
 
+  // 1) Traer datos ANTES de borrar
+  const target = await prisma.user.findUnique({
+    where: { id },
+    select: { email: true, nombre: true },
+  });
+  if (!target) throw new Error('Usuario inexistente');
+
+  // 2) Enviar mail si hay email
+  if (target.email) {
+    await notifyAccountRejected(id); // notifier ya usa el id
+  }
+
+  // 3) Borrar usuario
   await prisma.user.delete({ where: { id } });
+
+  // 4) Audit + revalidate
   await logAudit({
     action: AuditAction.RECHAZAR_USUARIO,
     userId: (session?.user as any)?.id!,
@@ -49,6 +66,7 @@ export async function rechazarUsuario(formData: FormData) {
   });
   revalidatePath('/admin/usuarios');
 }
+
 
 /* ─────────────── REGISTRAR DOCUMENTO PARA PROYECTO ─────────────── */
 export async function registrarDocumentoParaProyecto(formData: FormData) {

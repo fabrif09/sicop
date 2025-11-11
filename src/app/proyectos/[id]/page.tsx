@@ -311,14 +311,19 @@ export default async function ProyectoDetail({
                     if (!autorId) throw new Error('No autenticado');
                     if (!texto) return;
 
-                    await prisma.proyectoComentario.create({
+                    const created = await prisma.proyectoComentario.create({
                       data: {
                         proyectoId: proyecto.id,
                         autorId,
                         tipo: tipo as any,
                         texto,
                       },
+                      select: { id: true },
                     });
+
+                    // avisar por email al owner
+                    const { notifyNewComment } = await import('@/lib/notifier');
+                    await notifyNewComment(proyecto.id);
 
                     revalidatePath(`/proyectos/${proyecto.id}`);
                   }}

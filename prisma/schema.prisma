@@ -141,8 +141,11 @@ enum AuditAction {
   BORRAR_MATERIAL
   DESCARGAR_MATERIAL
 
-  // Visualización (más explícito que DESCARGAR)
+  // Visualización
   VER_PDF
+
+  // Notificaciones
+  ENVIAR_EMAIL
 }
 
 

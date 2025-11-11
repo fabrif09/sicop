@@ -7,6 +7,7 @@ import { revalidatePath } from 'next/cache';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { logAudit } from '@/lib/audit';
+import { notifyProjectApproved, notifyProjectRejected } from '@/lib/notifier';
 
 /* ===================== helpers ===================== */
 
@@ -118,34 +119,34 @@ export async function buscarSimilaresTrgm(input: {
 /* ===================== CRUD proyecto ===================== */
 
 // Crear proyecto (queda PROPUESTO por default en el schema)
-// Crear proyecto (queda PROPUESTO por default en el schema)
 export async function createProyecto(input: {
   titulo: string; descripcion: string; funcionalidades: string[];
-  anio: number; fechaCarga: string; // ⬅️ quitamos alumnoNombre / alumnoEmail
+  anio?: number | string;              
+  fechaCarga?: string;                 
 }) {
   const { userId, role } = await getSessionUser();
+  if (role !== 'ALUMNO') throw new Error('Solo los alumnos pueden crear proyectos.');
 
-  if (role !== 'ALUMNO') {
-    throw new Error('Solo los alumnos pueden crear proyectos.');
-  }
-
-  // ⬇️ Verificar que no tenga ya un proyecto ACTIVO
   const yaTieneActivo = await prisma.proyecto.count({
     where: { ownerId: userId, isActive: true },
   });
-  if (yaTieneActivo > 0) {
-    throw new Error('Ya tenés un proyecto activo.');
+  if (yaTieneActivo > 0) throw new Error('Ya tenés un proyecto activo.');
+
+  if (!input.titulo?.trim() || !input.descripcion?.trim()) {
+    throw new Error('Título y descripción son obligatorios');
   }
 
-  if (!input.titulo?.trim() || !input.descripcion?.trim()) throw new Error('Título y descripción son obligatorios');
-  if (!input.fechaCarga) throw new Error('La fecha de carga es obligatoria');
-
-  const fecha = new Date(input.fechaCarga);
+  // fechaCarga: hoy a las 00:00 si no viene
+  const fecha = input.fechaCarga ? new Date(input.fechaCarga) : new Date();
   if (Number.isNaN(fecha.getTime())) throw new Error('Fecha de carga inválida');
-  const hoy = new Date(); hoy.setHours(0,0,0,0);
-  if (fecha > hoy) throw new Error('La fecha de carga no puede ser futura');
+  fecha.setHours(0, 0, 0, 0);
+  const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+  if (fecha.getTime() > hoy.getTime()) throw new Error('La fecha de carga no puede ser futura');
 
-  // ⬇️ Traemos nombre/email del usuario logueado
+  // anio: si no viene o viene mal, usar año actual
+  const anioParsed = parseInt(String(input.anio ?? ''), 10);
+  const anio = Number.isFinite(anioParsed) ? anioParsed : new Date().getFullYear();
+
   const owner = await prisma.user.findUnique({
     where: { id: userId },
     select: { nombre: true, email: true },
@@ -161,12 +162,12 @@ export async function createProyecto(input: {
       titulo: input.titulo,
       descripcion: input.descripcion,
       funcionalidades: input.funcionalidades,
-      alumnoNombre: owner.nombre,    // ⬅️ desde el perfil
-      alumnoEmail: owner.email,      // ⬅️ desde el perfil
-      anio: input.anio,
+      alumnoNombre: owner.nombre,
+      alumnoEmail: owner.email,
+      anio,                       
       fechaCarga: fecha,
       textoIndexado,
-      ownerId: userId,               // ⬅️ dueño = alumno logueado
+      ownerId: userId,
     },
     select: { id: true },
   });
@@ -175,6 +176,7 @@ export async function createProyecto(input: {
   revalidatePath('/proyectos');
   return p.id;
 }
+
 
 
 /* ===================== documentos ===================== */
@@ -368,6 +370,9 @@ export async function aprobarProyecto(proyectoId: string, comentario?: string) {
   proyectoId,
   metadata: { comentario }, // o motivo
 });
+
+  await notifyProjectApproved(proyectoId);
+
   revalidatePath(`/proyectos/${proyectoId}`);
   revalidatePath('/proyectos');
 }
@@ -413,6 +418,8 @@ export async function rechazarProyecto(proyectoId: string, motivo?: string) {
   proyectoId,
   metadata: { motivo }, 
 });
+
+  await notifyProjectRejected(proyectoId, motivoTrim);
   // Revalidate
   revalidatePath(`/proyectos/${proyectoId}`);
   revalidatePath('/proyectos');
