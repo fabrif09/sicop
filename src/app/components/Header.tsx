@@ -37,6 +37,7 @@ export default async function Header() {
     navItems = [
       { label: 'Material Cátedra', href: '/materiales' },
       { label: 'Mi proyecto', href: '/mi-proyecto' },
+      { label: 'Profes de la cátedra', href: '/contacto-profes' },
     ];
   } else if (role === 'ADMIN' || role === 'PROF') {
     navItems = [

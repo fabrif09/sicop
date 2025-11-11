@@ -11,7 +11,7 @@ import FiltrosUsuariosClient from './FiltrosUsuariosClient';
 import CrearUsuarioClient from './CrearUsuarioClient';
 import ConfirmDelete from './ConfirmDelete';
 import { logAudit } from '@/lib/audit';
-
+import { mailtoLink, whatsappLink } from '@/lib/contactLinks';
 
 /* ───────────────────────────────── Página ───────────────────────────────── */
 type Search = {
@@ -136,7 +136,6 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
     },
   });
 
-
   const totalPages = Math.max(Math.ceil(total / perPage), 1);
 
   return (
@@ -219,14 +218,39 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
                 <div className="text-sm font-bold">
                   DNI: <span className="text-gray-700">{u.dni ?? '-'}</span>
                 </div>
+
+                {/* ⬇️ Email clicable en mobile */}
                 <div className="text-sm font-bold">
                   Email{' '}
-                  <span className="text-gray-700 break-all">{u.email}</span>
+                  {u.email ? (
+                    <a
+                      href={mailtoLink(u.email, 'SICOP', `Hola ${u.nombre || ''},`)}
+                      className="text-blue-700 hover:underline break-all"
+                    >
+                      {u.email}
+                    </a>
+                  ) : (
+                    <span className="text-gray-400">—</span>
+                  )}
                 </div>
+
+                {/* ⬇️ WhatsApp clicable en mobile */}
                 <div className="text-sm font-bold">
                   Celular{' '}
-                  <span className="text-gray-700">{u.celular ?? '-'}</span>
+                  {u.celular ? (
+                    <a
+                      href={whatsappLink(u.celular, `Hola ${u.nombre || ''}, te escribo por SICOP`)}
+                      target="_blank"
+                      rel="noopener"
+                      className="text-green-700 hover:underline"
+                    >
+                      {u.celular}
+                    </a>
+                  ) : (
+                    <span className="text-gray-400">—</span>
+                  )}
                 </div>
+
                 <div className="text-sm font-bold">
                   Rol{' '}
                   <span className="text-gray-700">{u.role}</span>
@@ -305,14 +329,41 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
                   <span className="font-semibold">DNI: </span>
                   <span className="text-gray-700">{u.dni ?? '-'}</span>
                 </div>
+
+                {/* ⬇️ Email clicable en md */}
                 <div className="text-sm">
                   <span className="font-semibold">Email: </span>
-                  <span className="text-gray-700 break-all">{u.email}</span>
+                  {u.email ? (
+                    <a
+                      href={mailtoLink(u.email, 'SICOP', `Hola ${u.nombre || ''},`)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-700 hover:underline break-all"
+                    >
+                      {u.email}
+                    </a>
+                  ) : (
+                    <span className="text-gray-400">—</span>
+                  )}
                 </div>
+
+                {/* ⬇️ WhatsApp clicable en md */}
                 <div className="text-sm">
                   <span className="font-semibold">Celular: </span>
-                  <span className="text-gray-700">{u.celular ?? '-'}</span>
+                  {u.celular ? (
+                    <a
+                      href={whatsappLink(u.celular, `Hola ${u.nombre || ''}, te escribo por SICOP`)}
+                      target="_blank"
+                      rel="noopener"
+                      className="text-green-700 hover:underline"
+                    >
+                      {u.celular}
+                    </a>
+                  ) : (
+                    <span className="text-gray-400">—</span>
+                  )}
                 </div>
+
                 <div className="text-sm">
                   <span className="font-semibold">Rol: </span>
                   <span className="text-gray-700">{u.role}</span>
@@ -411,9 +462,29 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
                     <td className="p-3 whitespace-nowrap max-w-[5rem]">
                       {u.dni ?? '-'}
                     </td>
-                    <td className="p-3 break-all">{u.email}</td>
-                    <td className="p-3 whitespace-nowrap">
-                      {u.celular ?? '-'}
+                    <td className='p-3'>
+                      {u.email ? (
+                        <a
+                          href={mailtoLink(u.email, 'SICOP', `Hola ${u.nombre || ''},`)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-700 hover:underline break-all"
+                        >
+                          {u.email}
+                        </a>
+                      ) : '—'}
+                    </td>
+                    <td>
+                      {u.celular ? (
+                        <a
+                          href={whatsappLink(u.celular, `Hola ${u.nombre || ''}, te escribo por SICOP`)}
+                          target="_blank"
+                          rel="noopener"
+                          className="text-green-700 hover:underline"
+                        >
+                          {u.celular}
+                        </a>
+                      ) : '—'}
                     </td>
                     <td className="p-3 whitespace-nowrap">{u.role}</td>
                     <td className="p-3 whitespace-nowrap">

@@ -3,13 +3,15 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import LogoutBtn from './LogoutBtn';
+
 import {
   Files,
   FolderKanban,
   GraduationCap,
   Users,
   LogIn,
-  CircleUser
+  CircleUser,
+  BookUser 
 } from 'lucide-react';
 
 type NavItem = {
@@ -25,6 +27,7 @@ export default function HeaderClient({
   headerClassName,
   userId,
   userName,
+  userRole,            // + NUEVO
 }: {
   navItems: NavItem[];
   loggedIn: boolean;
@@ -32,6 +35,7 @@ export default function HeaderClient({
   headerClassName: string;
   userId?: string;
   userName?: string;
+  userRole?: 'ADMIN' | 'PROF' | 'ALUMNO';   // + NUEVO
 }) {
   const [open, setOpen] = useState(false);
   const [animateIn, setAnimateIn] = useState(false);
@@ -62,6 +66,9 @@ export default function HeaderClient({
     if (label === 'Mi proyecto') return FolderKanban;
     if (label === 'Alumnos') return GraduationCap;
     if (label === 'Usuarios') return Users;
+    if (label === 'Ingresar') return LogIn;
+    if (label === 'Mi perfil') return CircleUser;
+    if (label === 'Profes de la cátedra') return BookUser;
     return null;
   };
 
@@ -111,6 +118,17 @@ export default function HeaderClient({
                 </Link>
               );
             })}
+            {/* visible solo para alumnos */}
+              {loggedIn && userRole === 'ALUMNO' && (
+                <Link
+                  href="/contacto-profes"
+                  className="text-sm text-white hover:underline inline-flex items-center gap-1.5"
+                  title="Profes de la cátedra"
+                >
+                  <BookUser className="h-4 w-4" />
+                  <span>Profes de la cátedra</span>
+                </Link>
+              )}
 
             {!loggedIn ? (
               <Link
@@ -192,6 +210,19 @@ export default function HeaderClient({
                   </Link>
                 );
               })}
+              {/* visible solo para alumnos también en mobile */}
+                {loggedIn && userRole === 'ALUMNO' && (
+                  <Link
+                    href="/contacto-profes"
+                    onClick={closeMenu}
+                    className="flex items-center justify-between rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50"
+                  >
+                    <span className="inline-flex items-center gap-1.5">
+                      <BookUser className="h-4 w-4 text-[#1e40af]" />
+                      Profes de la cátedra
+                    </span>
+                  </Link>
+                )}
 
               {/* 👇 PERFIL (debajo de Usuarios) */}
               {loggedIn && userId && (

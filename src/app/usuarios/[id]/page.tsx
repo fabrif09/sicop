@@ -8,6 +8,7 @@ import {
   ArrowLeft, User as UserIcon, Mail, IdCard, Phone, Shield,
   GraduationCap, CalendarCheck, Award, Folder, FolderX, FileText
 } from 'lucide-react';
+import { mailtoLink, whatsappLink } from '@/lib/contactLinks';
 
 function Badge({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
@@ -110,7 +111,16 @@ export default async function PerfilUsuarioPage({
             <div className="flex items-start gap-2">
               <Mail className="h-5 w-5 text-blue-600 mt-1" />
               <div className="min-w-0">
-                <div className="font-semibold break-all">{u.email ?? '-'}</div>
+                <div className="font-semibold break-all">{u.email && (
+                      <a
+                        href={mailtoLink(u.email, 'SICOP', `Hola ${u.nombre || ''},`)}
+                        target='blank'
+                        rel="noopener noreferrer"
+                        className="text-blue-700 hover:underline break-all"
+                      >
+                        {u.email}
+                      </a>
+                    )}</div>
                 <div className="text-sm text-gray-600">Email</div>
               </div>
             </div>
@@ -126,7 +136,16 @@ export default async function PerfilUsuarioPage({
             <div className="flex items-start gap-2">
               <Phone className="h-5 w-5 text-blue-600 mt-1" />
               <div>
-                <div className="font-semibold">{u.celular ?? '-'}</div>
+                <div className="font-semibold">{u.celular && (
+                      <a
+                        href={whatsappLink(u.celular, 'Hola, le escribo por SICOP')}
+                        target="_blank"
+                        rel="noopener"
+                        className="text-green-700 hover:underline"
+                      >
+                        {u.celular}
+                      </a>
+                    )}</div>
                 <div className="text-sm text-gray-600">Celular</div>
               </div>
             </div>
