@@ -1,8 +1,10 @@
+//src/app/materiales/page.tsx
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { listarMateriales, borrarMaterial } from '@/app/api/materiales/actions';
 import MaterialUploader from './MaterialUploader';
 import VerArchivoBtn from './VerArchivoBtn';
+import ConfirmDeleteMaterialBtn from './ConfirmDeleteMaterialBtn';
 
 
 export default async function MaterialesPage() {
@@ -69,9 +71,7 @@ export default async function MaterialesPage() {
                           await borrarMaterial(m.id);
                         }}
                       >
-                        <button className="btn bg-red-600 hover:bg-red-700 w-full sm:w-auto">
-                          Borrar
-                        </button>
+                        <ConfirmDeleteMaterialBtn> Borrar </ConfirmDeleteMaterialBtn>
                       </form>
                     </div>
                   )}

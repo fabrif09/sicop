@@ -73,6 +73,15 @@ export async function registrarMaterial(input: {
   const base = input.key.startsWith('materiales/') ? input.key : `materiales/${input.key}`;
   const safeKey = sanitizeKey(base);
 
+  // ✅ Chequeo de colisión de nombre/clave antes de crear
+  const collision = await prisma.materialCatedra.findFirst({
+    where: { key: safeKey },
+    select: { id: true, titulo: true },
+  });
+  if (collision) {
+    throw new Error('Ya existe un material con ese nombre. Usá "Reemplazar" o renombrá el archivo y probá de nuevo.');
+  }
+
   const created = await prisma.materialCatedra.create({
     data: {
       titulo: input.titulo.trim(),
@@ -178,6 +187,17 @@ export async function reemplazarMaterial(input: {
   const base = input.key.startsWith('materiales/') ? input.key : `materiales/${input.key}`;
   const safeKey = sanitizeKey(base);
   const newVersion = (m.version ?? 1) + 1;
+
+  // ✅ chequeo de colisión antes del update
+  const collision = await prisma.materialCatedra.findFirst({
+    where: { key: safeKey, NOT: { id: input.id } },
+    select: { id: true, titulo: true },
+  });
+  if (collision) {
+    throw new Error(
+      'Ya existe otro material con ese nombre. Renombrá el archivo y volvé a intentar.'
+    );
+  }
 
   const updated = await prisma.materialCatedra.update({
     where: { id: input.id },

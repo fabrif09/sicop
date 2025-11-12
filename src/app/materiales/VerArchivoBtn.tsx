@@ -15,5 +15,5 @@ export default function VerArchivoBtn({ keyS3 }: { keyS3: string }) {
       alert(e?.message ?? 'No se pudo abrir el archivo');
     }
   }
-  return <button className="btn bg-white text-blue-700 border border-blue-600 hover:bg-blue-50" onClick={handleClick}>Descargar</button>;
+  return <button className="btn bg-white text-blue-700 border border-blue-600 hover:bg-blue-50" onClick={handleClick}>Ver/Descargar</button>;
 }
