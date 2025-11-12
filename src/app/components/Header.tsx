@@ -67,6 +67,7 @@ export default async function Header() {
       headerClassName="sticky top-0 z-40 bg-[#1e40af] backdrop-blur bg-opacity-50 shadow-lg"
       userId={userId}
       userName={userName}
+      userRole={role}
     />
   );
 }

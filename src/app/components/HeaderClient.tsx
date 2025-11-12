@@ -11,7 +11,7 @@ import {
   Users,
   LogIn,
   CircleUser,
-  BookUser 
+  BookUser
 } from 'lucide-react';
 
 type NavItem = {
@@ -27,7 +27,7 @@ export default function HeaderClient({
   headerClassName,
   userId,
   userName,
-  userRole,            // + NUEVO
+  userRole, // + NUEVO
 }: {
   navItems: NavItem[];
   loggedIn: boolean;
@@ -35,10 +35,16 @@ export default function HeaderClient({
   headerClassName: string;
   userId?: string;
   userName?: string;
-  userRole?: 'ADMIN' | 'PROF' | 'ALUMNO';   // + NUEVO
+  userRole?: 'ADMIN' | 'PROF' | 'ALUMNO'; // + NUEVO
 }) {
   const [open, setOpen] = useState(false);
   const [animateIn, setAnimateIn] = useState(false);
+
+  // 👇 NUEVO: estado con contadores en vivo
+  const [liveCounts, setLiveCounts] = useState<{
+    pendingUsers: number;
+    pendingPropuestas: number;
+  } | null>(null);
 
   function openMenu() {
     setOpen(true);
@@ -52,6 +58,39 @@ export default function HeaderClient({
     if (open) requestAnimationFrame(() => setAnimateIn(true));
     else setAnimateIn(false);
   }, [open]);
+
+  // 👇 NUEVO: polling + refresh al recuperar foco
+  useEffect(() => {
+    if (!loggedIn || !(userRole === 'ADMIN' || userRole === 'PROF')) return;
+
+    let intervalId: number | null = null;
+
+    const fetchCounts = async () => {
+      try {
+        const res = await fetch('/api/badges', { cache: 'no-store' });
+        if (res.ok) {
+          const data = await res.json();
+          setLiveCounts({
+            pendingUsers: data.pendingUsers ?? 0,
+            pendingPropuestas: data.pendingPropuestas ?? 0,
+          });
+        }
+      } catch {
+        // silencioso
+      }
+    };
+
+    // primer tiro + cada 5 s + al volver el foco
+    fetchCounts();
+    intervalId = window.setInterval(fetchCounts, 5000);
+    const onFocus = () => fetchCounts();
+    window.addEventListener('focus', onFocus);
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, [loggedIn, userRole]);
 
   const Badge = ({ count }: { count?: number }) =>
     count && count > 0 ? (
@@ -70,6 +109,18 @@ export default function HeaderClient({
     if (label === 'Mi perfil') return CircleUser;
     if (label === 'Profes de la cátedra') return BookUser;
     return null;
+  };
+
+  // 👇 NUEVO: función que decide el badge actual
+  const currentBadgeFor = (item: NavItem) => {
+    if (!liveCounts) return item.badgeCount;
+
+    if (item.label === 'Proyectos') return liveCounts.pendingPropuestas;
+    if (item.label === 'Usuarios') return liveCounts.pendingUsers;
+    if (item.label === 'Alumnos' && userRole === 'PROF')
+      return liveCounts.pendingUsers;
+
+    return item.badgeCount;
   };
 
   return (
@@ -96,7 +147,6 @@ export default function HeaderClient({
                 </h1>
               </div>
 
-              {/* 👇 visible en mobile, oculto en md, vuelve a mostrarse en lg */}
               <span className="font-heading tracking-wide text-white md:hidden">SICOP</span>
               <span className="font-heading tracking-wide text-white hidden lg:inline">SICOP</span>
             </Link>
@@ -106,6 +156,7 @@ export default function HeaderClient({
           <nav className="hidden md:flex items-center gap-4">
             {navItems.map((item) => {
               const Icon = getIcon(item.label);
+              const badge = currentBadgeFor(item);
               return (
                 <Link
                   key={item.href}
@@ -114,21 +165,21 @@ export default function HeaderClient({
                 >
                   {Icon && <Icon className="h-4 w-4" />}
                   <span>{item.label}</span>
-                  <Badge count={item.badgeCount} />
+                  <Badge count={badge} />
                 </Link>
               );
             })}
             {/* visible solo para alumnos */}
-              {loggedIn && userRole === 'ALUMNO' && (
-                <Link
-                  href="/contacto-profes"
-                  className="text-sm text-white hover:underline inline-flex items-center gap-1.5"
-                  title="Profes de la cátedra"
-                >
-                  <BookUser className="h-4 w-4" />
-                  <span>Profes de la cátedra</span>
-                </Link>
-              )}
+            {loggedIn && userRole === 'ALUMNO' && (
+              <Link
+                href="/contacto-profes"
+                className="text-sm text-white hover:underline inline-flex items-center gap-1.5"
+                title="Profes de la cátedra"
+              >
+                <BookUser className="h-4 w-4" />
+                <span>Profes de la cátedra</span>
+              </Link>
+            )}
 
             {!loggedIn ? (
               <Link
@@ -140,7 +191,6 @@ export default function HeaderClient({
               </Link>
             ) : (
               <>
-                {/* 👇 Perfil con nombre del usuario */}
                 {userId && (
                   <Link
                     href={`/usuarios/${userId}`}
@@ -158,7 +208,7 @@ export default function HeaderClient({
         </div>
       </header>
 
-      {/* MOBILE DRAWER (sin cambios funcionales) */}
+      {/* MOBILE DRAWER */}
       {open && (
         <div className="fixed inset-0 z-50 md:hidden" aria-modal="true" role="dialog">
           <button
@@ -195,6 +245,7 @@ export default function HeaderClient({
             <nav className="flex-1 overflow-y-auto p-4 space-y-2">
               {navItems.map((item) => {
                 const Icon = getIcon(item.label);
+                const badge = currentBadgeFor(item);
                 return (
                   <Link
                     key={item.href}
@@ -206,25 +257,23 @@ export default function HeaderClient({
                       {Icon && <Icon className="h-4 w-4 text-[#1e40af]" />}
                       {item.label}
                     </span>
-                    <Badge count={item.badgeCount} />
+                    <Badge count={badge} />
                   </Link>
                 );
               })}
-              {/* visible solo para alumnos también en mobile */}
-                {loggedIn && userRole === 'ALUMNO' && (
-                  <Link
-                    href="/contacto-profes"
-                    onClick={closeMenu}
-                    className="flex items-center justify-between rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50"
-                  >
-                    <span className="inline-flex items-center gap-1.5">
-                      <BookUser className="h-4 w-4 text-[#1e40af]" />
-                      Profes de la cátedra
-                    </span>
-                  </Link>
-                )}
+              {loggedIn && userRole === 'ALUMNO' && (
+                <Link
+                  href="/contacto-profes"
+                  onClick={closeMenu}
+                  className="flex items-center justify-between rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50"
+                >
+                  <span className="inline-flex items-center gap-1.5">
+                    <BookUser className="h-4 w-4 text-[#1e40af]" />
+                    Profes de la cátedra
+                  </span>
+                </Link>
+              )}
 
-              {/* 👇 PERFIL (debajo de Usuarios) */}
               {loggedIn && userId && (
                 <Link
                   href={`/usuarios/${userId}`}
