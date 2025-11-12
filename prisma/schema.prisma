@@ -43,11 +43,11 @@ model User {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  proyectos    Proyecto[]  @relation("OwnerProyectos")
-  aprobaciones Proyecto[]  @relation("AprobadorProyectos")
-  documentos   Documento[] @relation("UploaderDocs")
-  logs         AuditLog[]
-  materialesSubidos MaterialCatedra[] @relation("UploaderMateriales")
+  proyectos           Proyecto[]           @relation("OwnerProyectos")
+  aprobaciones        Proyecto[]           @relation("AprobadorProyectos")
+  documentos          Documento[]          @relation("UploaderDocs")
+  logs                AuditLog[]
+  materialesSubidos   MaterialCatedra[]    @relation("UploaderMateriales")
   comentariosProyecto ProyectoComentario[]
 
   // 👇 Soft-delete + trazabilidad
@@ -60,10 +60,8 @@ model User {
 
   // 👇 lado inverso para los logs de eliminación (targetUser)
   auditTargetOf AuditLog[] @relation("AuditTargetUser")
+
 }
-
-
-
 
 model Proyecto {
   id              String   @id @default(cuid())
@@ -81,22 +79,21 @@ model Proyecto {
   updatedAt       DateTime @updatedAt
 
   // NUEVO: flag de actividad (soft-delete)
-  isActive        Boolean  @default(true)
+  isActive Boolean @default(true)
 
   // NUEVO: dueño alumno que creó la propuesta
-  ownerId         String   
-  owner           User     @relation("OwnerProyectos", fields: [ownerId], references: [id])
+  ownerId String
+  owner   User   @relation("OwnerProyectos", fields: [ownerId], references: [id])
 
   // NUEVO: quién la aprobó y cuándo
-  aprobadoPorId   String?
-  aprobadoPor     User?    @relation("AprobadorProyectos", fields: [aprobadoPorId], references: [id])
-  aprobadoEn      DateTime?
+  aprobadoPorId String?
+  aprobadoPor   User?     @relation("AprobadorProyectos", fields: [aprobadoPorId], references: [id])
+  aprobadoEn    DateTime?
 
   documentos Documento[]
   logs       AuditLog[]
 
   comentarios ProyectoComentario[]
-
 }
 
 model Documento {
@@ -126,7 +123,7 @@ enum AuditAction {
   EDITAR_PROYECTO
   BORRAR_PROYECTO
   DESCARGAR_PDF
-  ELIMINAR_USUARIO           
+  ELIMINAR_USUARIO
 
   // NUEVOS
   CREAR_USUARIO
@@ -146,30 +143,26 @@ enum AuditAction {
 
   // Notificaciones
   ENVIAR_EMAIL
+  EDITAR_CONTACTO_USUARIO
 }
 
-
-
 model AuditLog {
-  id           String       @id @default(cuid())
+  id           String      @id @default(cuid())
   action       AuditAction
   userId       String
-  user         User         @relation(fields: [userId], references: [id])
+  user         User        @relation(fields: [userId], references: [id])
   proyectoId   String?
-  proyecto     Proyecto?    @relation(fields: [proyectoId], references: [id])
+  proyecto     Proyecto?   @relation(fields: [proyectoId], references: [id])
   targetUserId String?
-  targetUser   User?        @relation("AuditTargetUser", fields: [targetUserId], references: [id])
+  targetUser   User?       @relation("AuditTargetUser", fields: [targetUserId], references: [id])
   metadata     Json?
-  createdAt    DateTime     @default(now())
+  createdAt    DateTime    @default(now())
 
   @@index([createdAt, action])
   @@index([userId, createdAt])
   @@index([proyectoId, createdAt])
   @@index([targetUserId, createdAt])
 }
-
-
-
 
 model MaterialCatedra {
   id          String  @id @default(cuid())
@@ -204,3 +197,4 @@ model ProyectoComentario {
   texto      String
   createdAt  DateTime       @default(now())
 }
+

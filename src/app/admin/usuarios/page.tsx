@@ -11,6 +11,7 @@ import FiltrosUsuariosClient from './FiltrosUsuariosClient';
 import CrearUsuarioClient from './CrearUsuarioClient';
 import ConfirmDelete from './ConfirmDelete';
 import { logAudit } from '@/lib/audit';
+import { updateAlumnoContact } from '@/app/usuarios/actions';
 import { mailtoLink, whatsappLink } from '@/lib/contactLinks';
 
 /* ───────────────────────────────── Página ───────────────────────────────── */
@@ -42,6 +43,23 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
         </div>
       </main>
     );
+  }
+
+  async function onSaveUsuario(formData: FormData) {
+    'use server';
+    const id = String(formData.get('id') || '');
+    const nombre = String(formData.get('nombre') || '').trim();
+    const email = String(formData.get('email') || '').trim();
+    const celular = String(formData.get('celular') || '').trim();
+
+    // 1) contacto
+    await updateAlumnoContact({ userId: id, nombre, email, celular });
+
+    // 2) resto de campos (ya la tenés)
+    await guardarDatosAlumno(formData);
+
+    // 3) refresco
+    revalidatePath('/admin/usuarios');
   }
 
   const sp = await searchParams;
@@ -290,13 +308,16 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
                   <EditUserModal
                     user={{
                       id: u.id,
+                      nombre: u.nombre,          
+                      email: u.email,            
+                      celular: u.celular,        
                       egresado: u.egresado,
                       fechaRindio: u.fechaRindio,
                       nota: u.nota,
                       role: u.role,
                     }}
                     canEditRole={viewerRole === 'ADMIN'}
-                    onSave={guardarDatosAlumno}
+                    onSave={onSaveUsuario}       // ← usar la acción combinada
                     triggerClassName="w-full"
                   />
                 </div>
@@ -404,13 +425,16 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
                   <EditUserModal
                     user={{
                       id: u.id,
+                      nombre: u.nombre,          
+                      email: u.email,            
+                      celular: u.celular,        
                       egresado: u.egresado,
                       fechaRindio: u.fechaRindio,
                       nota: u.nota,
                       role: u.role,
                     }}
                     canEditRole={viewerRole === 'ADMIN'}
-                    onSave={guardarDatosAlumno}
+                    onSave={onSaveUsuario}       // ← usar la acción combinada
                     triggerClassName="w-full"
                   />
                 </div>
@@ -459,7 +483,7 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
                         {u.nombre}
                       </Link>
                     </td>
-                    <td className="p-3 whitespace-nowrap max-w-[5rem]">
+                    <td className="p-3 whitespace-nowrap max-w-[5.5rem]">
                       {u.dni ?? '-'}
                     </td>
                     <td className='p-3'>
@@ -519,13 +543,16 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
                         <EditUserModal
                           user={{
                             id: u.id,
+                            nombre: u.nombre,          
+                            email: u.email,            
+                            celular: u.celular,        
                             egresado: u.egresado,
                             fechaRindio: u.fechaRindio,
                             nota: u.nota,
                             role: u.role,
                           }}
                           canEditRole={viewerRole === 'ADMIN'}
-                          onSave={guardarDatosAlumno}
+                          onSave={onSaveUsuario}
                         />
                         {/* 🔴 ELIMINAR (solo ADMIN, no self, no ADMIN) */}
                         {viewerRole === 'ADMIN' && u.role !== 'ADMIN' && u.id !== viewerId && (

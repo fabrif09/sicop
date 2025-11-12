@@ -170,6 +170,37 @@ export default async function PerfilUsuarioPage({
           </div>
         </section>
 
+        {viewerId === u.id && (
+          <section className="bg-white shadow-md rounded-lg p-4">
+            <h3 className="text-lg font-semibold mb-2">Editar mis datos de contacto</h3>
+            <form action={async (formData: FormData) => {
+              'use server';
+              const nombre = String(formData.get('nombre') || '');
+              const celular = String(formData.get('celular') || '');
+              const { updateOwnContact } = await import('@/app/usuarios/actions');
+              await updateOwnContact({ nombre, celular });
+            }} className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <input
+                name="nombre"
+                defaultValue={u.nombre ?? ''}
+                className="border rounded p-2"
+                placeholder="Nombre"
+                required
+              />
+              <input
+                name="celular"
+                defaultValue={u.celular ?? ''}
+                className="border rounded p-2"
+                placeholder="Celular (solo números)"
+              />
+              <button className="btn">Guardar</button>
+            </form>
+            <p className="text-xs text-gray-500 mt-2">
+              Si necesitás cambiar tu email, pedí ayuda a un profesor.
+            </p>
+          </section>
+        )}
+
         {/* ← NUEVO: Formulario cambiar contraseña (sin alterar estética existente) */}
         {canChangePassword && (
           <ChangePasswordForm userId={u.id} hasPassword={!!u.passwordHash} />

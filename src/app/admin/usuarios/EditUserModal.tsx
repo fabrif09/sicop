@@ -2,10 +2,13 @@
 
 import { useRef } from 'react';
 import type { Role } from '@prisma/client';
-import { Pencil  } from 'lucide-react';
+import { Pencil } from 'lucide-react';
 
 type UserForModal = {
   id: string;
+  nombre?: string | null;
+  email?: string | null;
+  celular?: string | null;
   egresado: boolean | null;
   fechaRindio: Date | null;
   nota: number | null;
@@ -15,13 +18,12 @@ type UserForModal = {
 export default function EditUserModal({
   user,
   canEditRole,
-  onSave,
+  onSave,               // ← volvemos a recibir la Server Action por props
   triggerClassName = '',
 }: {
   user: UserForModal;
   canEditRole: boolean;
-  // Server Action (se pasa desde el server component)
-  onSave: (formData: FormData) => void;
+  onSave: (formData: FormData) => void;   // ← la acción viene del server
   triggerClassName?: string;
 }) {
   const ref = useRef<HTMLDialogElement | null>(null);
@@ -41,7 +43,7 @@ export default function EditUserModal({
         <Pencil className="h-4 w-4 shrink-0 -mt-px" />
         <span className="lg:whitespace-nowrap leading-none">Editar</span>
       </button>
-      
+
       <dialog
         ref={ref}
         className="rounded-xl p-2 backdrop:bg-black/50  w-[min(92vw,520px)] fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
@@ -59,15 +61,47 @@ export default function EditUserModal({
             </button>
           </div>
 
+          {/* ← usamos la Server Action que viene por props */}
           <form action={onSave} className="p-5 space-y-3">
             <input type="hidden" name="id" value={user.id} />
 
-            <label className="flex items-center gap-2">
+            {/* NUEVOS CAMPOS */}
+            <label className="block text-sm font-bold">
+              Nombre
               <input
-                type="checkbox"
-                name="egresado"
-                defaultChecked={!!user.egresado}
+                type="text"
+                name="nombre"
+                defaultValue={user.nombre ?? ''}
+                required
+                className="mt-1 w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
               />
+            </label>
+
+            <label className="block text-sm font-bold">
+              Email
+              <input
+                type="email"
+                name="email"
+                defaultValue={user.email ?? ''}
+                required
+                className="mt-1 w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+              />
+            </label>
+
+            <label className="block text-sm font-bold">
+              Celular
+              <input
+                type="text"
+                name="celular"
+                defaultValue={user.celular ?? ''}
+                placeholder="Solo números"
+                className="mt-1 w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+              />
+            </label>
+            {/* FIN NUEVOS CAMPOS */}
+
+            <label className="flex items-center gap-2">
+              <input type="checkbox" name="egresado" defaultChecked={!!user.egresado} />
               <span className='font-bold'>Egresado</span>
             </label>
 
@@ -77,7 +111,7 @@ export default function EditUserModal({
                 type="date"
                 name="fechaRindio"
                 defaultValue={
-                  user.fechaRindio ? new Date(user.fechaRindio).toLocaleDateString('es-AR') : ''
+                  user.fechaRindio ? new Date(user.fechaRindio).toISOString().split('T')[0] : ''
                 }
                 className="mt-1 w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
               />
@@ -118,10 +152,7 @@ export default function EditUserModal({
               >
                 Cancelar
               </button>
-              <button
-                className="btn"
-                onClick={() => setTimeout(close, 0)}
-              >
+              <button className="btn" onClick={() => setTimeout(close, 0)}>
                 Guardar cambios
               </button>
             </div>
