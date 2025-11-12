@@ -337,6 +337,16 @@ export async function guardarDatosAlumno(formData: FormData) {
   const id = String(formData.get('id') || '');
   if (!id) throw new Error('Falta id');
 
+  // 🔒 Traer el rol del usuario objetivo y aplicar regla de autorización
+  const target = await prisma.user.findUnique({
+    where: { id },
+    select: { role: true },
+  });
+  if (!target) throw new Error('Usuario no encontrado');
+  if (viewerRole === 'PROF' && target.role !== 'ALUMNO') {
+    throw new Error('No autorizado: los profesores solo pueden editar alumnos.');
+  }
+
   const egresadoStr = String(formData.get('egresado') ?? '');
   const egresado = egresadoStr === 'on' || egresadoStr === 'true';
 
@@ -375,7 +385,6 @@ export async function guardarDatosAlumno(formData: FormData) {
     targetUserId: id,
     metadata: { egresado, fechaRindio, nota, roleChangedTo: roleUpdate.role ?? undefined },
   });
-
 
   revalidatePath('/admin/usuarios');
 }

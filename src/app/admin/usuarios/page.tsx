@@ -225,109 +225,116 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
               No hay usuarios activos con esos criterios.
             </div>
           ) : (
-            activos.map((u) => (
-              <div
-                key={u.id}
-                className="bg-white rounded-lg shadow-sm p-3 border"
-              >
-                <Link href={`/usuarios/${u.id}`} className="font-semibold text-primary hover:underline">
-                  {u.nombre}
-                </Link>
-                <div className="text-sm font-bold">
-                  DNI: <span className="text-gray-700">{u.dni ?? '-'}</span>
-                </div>
+            activos.map((u) => {
+              const canEditThisUser =
+                viewerRole === 'ADMIN' || (viewerRole === 'PROF' && u.role === 'ALUMNO');
 
-                {/* ⬇️ Email clicable en mobile */}
-                <div className="text-sm font-bold">
-                  Email{' '}
-                  {u.email ? (
-                    <a
-                      href={mailtoLink(u.email, 'SICOP', `Hola ${u.nombre || ''},`)}
-                      className="text-blue-700 hover:underline break-all"
-                    >
-                      {u.email}
-                    </a>
-                  ) : (
-                    <span className="text-gray-400">—</span>
+              return (
+                <div
+                  key={u.id}
+                  className="bg-white rounded-lg shadow-sm p-3 border"
+                >
+                  <Link href={`/usuarios/${u.id}`} className="font-semibold text-primary hover:underline">
+                    {u.nombre}
+                  </Link>
+                  <div className="text-sm font-bold">
+                    DNI: <span className="text-gray-700">{u.dni ?? '-'}</span>
+                  </div>
+
+                  {/* ⬇️ Email clicable en mobile */}
+                  <div className="text-sm font-bold">
+                    Email{' '}
+                    {u.email ? (
+                      <a
+                        href={mailtoLink(u.email, 'SICOP', `Hola ${u.nombre || ''},`)}
+                        className="text-blue-700 hover:underline break-all"
+                      >
+                        {u.email}
+                      </a>
+                    ) : (
+                      <span className="text-gray-400">—</span>
+                    )}
+                  </div>
+
+                  {/* ⬇️ WhatsApp clicable en mobile */}
+                  <div className="text-sm font-bold">
+                    Celular{' '}
+                    {u.celular ? (
+                      <a
+                        href={whatsappLink(u.celular, `Hola ${u.nombre || ''}, te escribo por SICOP`)}
+                        target="_blank"
+                        rel="noopener"
+                        className="text-green-700 hover:underline"
+                      >
+                        {u.celular}
+                      </a>
+                    ) : (
+                      <span className="text-gray-400">—</span>
+                    )}
+                  </div>
+
+                  <div className="text-sm font-bold">
+                    Rol{' '}
+                    <span className="text-gray-700">{u.role}</span>
+                  </div>
+                  <div className="text-sm font-bold">
+                    Egresado{' '}
+                    <span className="text-gray-700">
+                      {u.egresado ? 'Sí' : 'No'}
+                    </span>
+                  </div>
+                  <div className="text-sm font-bold">
+                    Fecha rendida{' '}
+                    <span className="text-gray-700">
+                      {u.fechaRindio
+                        ? u.fechaRindio.toLocaleDateString('es-AR')
+                        : '-'}
+                    </span>
+                  </div>
+                  <div className="text-sm font-bold">
+                    Nota <span className="text-gray-700">{u.nota ?? '-'}</span>
+                  </div>
+                  <div className="text-sm font-bold">
+                    Proyecto{' '}
+                    {u.proyectos[0] ? (
+                      <Link
+                        href={`/proyectos/${u.proyectos[0].id}`}
+                        className="text-blue-700 hover:underline"
+                      >
+                        {u.proyectos[0].titulo || 'Ver proyecto'}
+                      </Link>
+                    ) : (
+                      <span className="text-gray-400">Sin proyecto</span>
+                    )}
+                  </div>
+
+                  <div className="mt-3">
+                    {canEditThisUser && (
+                      <EditUserModal
+                        user={{
+                          id: u.id,
+                          nombre: u.nombre,
+                          email: u.email,
+                          celular: u.celular,
+                          egresado: u.egresado,
+                          fechaRindio: u.fechaRindio,
+                          nota: u.nota,
+                          role: u.role,
+                        }}
+                        canEditRole={viewerRole === 'ADMIN'}
+                        onSave={onSaveUsuario}       // ← usar la acción combinada
+                        triggerClassName="w-full"
+                      />
+                    )}
+                  </div>
+
+                  {/* 🔴 ELIMINAR (solo ADMIN, no self, no ADMIN) */}
+                  {viewerRole === 'ADMIN' && u.role !== 'ADMIN' && u.id !== viewerId && (
+                    <ConfirmDelete userId={u.id} />
                   )}
                 </div>
-
-                {/* ⬇️ WhatsApp clicable en mobile */}
-                <div className="text-sm font-bold">
-                  Celular{' '}
-                  {u.celular ? (
-                    <a
-                      href={whatsappLink(u.celular, `Hola ${u.nombre || ''}, te escribo por SICOP`)}
-                      target="_blank"
-                      rel="noopener"
-                      className="text-green-700 hover:underline"
-                    >
-                      {u.celular}
-                    </a>
-                  ) : (
-                    <span className="text-gray-400">—</span>
-                  )}
-                </div>
-
-                <div className="text-sm font-bold">
-                  Rol{' '}
-                  <span className="text-gray-700">{u.role}</span>
-                </div>
-                <div className="text-sm font-bold">
-                  Egresado{' '}
-                  <span className="text-gray-700">
-                    {u.egresado ? 'Sí' : 'No'}
-                  </span>
-                </div>
-                <div className="text-sm font-bold">
-                  Fecha rendida{' '}
-                  <span className="text-gray-700">
-                    {u.fechaRindio
-                      ? u.fechaRindio.toLocaleDateString('es-AR')
-                      : '-'}
-                  </span>
-                </div>
-                <div className="text-sm font-bold">
-                  Nota <span className="text-gray-700">{u.nota ?? '-'}</span>
-                </div>
-                <div className="text-sm font-bold">
-                  Proyecto{' '}
-                  {u.proyectos[0] ? (
-                    <Link
-                      href={`/proyectos/${u.proyectos[0].id}`}
-                      className="text-blue-700 hover:underline"
-                    >
-                      {u.proyectos[0].titulo || 'Ver proyecto'}
-                    </Link>
-                  ) : (
-                    <span className="text-gray-400">Sin proyecto</span>
-                  )}
-                </div>
-
-                <div className="mt-3">
-                  <EditUserModal
-                    user={{
-                      id: u.id,
-                      nombre: u.nombre,          
-                      email: u.email,            
-                      celular: u.celular,        
-                      egresado: u.egresado,
-                      fechaRindio: u.fechaRindio,
-                      nota: u.nota,
-                      role: u.role,
-                    }}
-                    canEditRole={viewerRole === 'ADMIN'}
-                    onSave={onSaveUsuario}       // ← usar la acción combinada
-                    triggerClassName="w-full"
-                  />
-                </div>
-
-                {/* 🔴 ELIMINAR (solo ADMIN, no self, no ADMIN) */}
-                {viewerRole === 'ADMIN' && u.role !== 'ADMIN' && u.id !== viewerId && (
-                  <ConfirmDelete userId={u.id} />
-                )}
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 
@@ -338,113 +345,120 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
               No hay usuarios activos con esos criterios.
             </div>
           ) : (
-            activos.map((u) => (
-              <div
-                key={u.id}
-                className="bg-white rounded-lg shadow-sm p-4 border"
-              >
-                <Link href={`/usuarios/${u.id}`} className="font-semibold text-primary hover:underline">
-                  {u.nombre}
-                </Link>
-                <div className="text-sm">
-                  <span className="font-semibold">DNI: </span>
-                  <span className="text-gray-700">{u.dni ?? '-'}</span>
-                </div>
+            activos.map((u) => {
+              const canEditThisUser =
+                viewerRole === 'ADMIN' || (viewerRole === 'PROF' && u.role === 'ALUMNO');
 
-                {/* ⬇️ Email clicable en md */}
-                <div className="text-sm">
-                  <span className="font-semibold">Email: </span>
-                  {u.email ? (
-                    <a
-                      href={mailtoLink(u.email, 'SICOP', `Hola ${u.nombre || ''},`)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-700 hover:underline break-all"
-                    >
-                      {u.email}
-                    </a>
-                  ) : (
-                    <span className="text-gray-400">—</span>
+              return (
+                <div
+                  key={u.id}
+                  className="bg-white rounded-lg shadow-sm p-4 border"
+                >
+                  <Link href={`/usuarios/${u.id}`} className="font-semibold text-primary hover:underline">
+                    {u.nombre}
+                  </Link>
+                  <div className="text-sm">
+                    <span className="font-semibold">DNI: </span>
+                    <span className="text-gray-700">{u.dni ?? '-'}</span>
+                  </div>
+
+                  {/* ⬇️ Email clicable en md */}
+                  <div className="text-sm">
+                    <span className="font-semibold">Email: </span>
+                    {u.email ? (
+                      <a
+                        href={mailtoLink(u.email, 'SICOP', `Hola ${u.nombre || ''},`)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-700 hover:underline break-all"
+                      >
+                        {u.email}
+                      </a>
+                    ) : (
+                      <span className="text-gray-400">—</span>
+                    )}
+                  </div>
+
+                  {/* ⬇️ WhatsApp clicable en md */}
+                  <div className="text-sm">
+                    <span className="font-semibold">Celular: </span>
+                    {u.celular ? (
+                      <a
+                        href={whatsappLink(u.celular, `Hola ${u.nombre || ''}, te escribo por SICOP`)}
+                        target="_blank"
+                        rel="noopener"
+                        className="text-green-700 hover:underline"
+                      >
+                        {u.celular}
+                      </a>
+                    ) : (
+                      <span className="text-gray-400">—</span>
+                    )}
+                  </div>
+
+                  <div className="text-sm">
+                    <span className="font-semibold">Rol: </span>
+                    <span className="text-gray-700">{u.role}</span>
+                  </div>
+                  <div className="text-sm">
+                    <span className="font-semibold">Egresado: </span>
+                    <span className="text-gray-700">
+                      {u.egresado ? 'Sí' : 'No'}
+                    </span>
+                  </div>
+                  <div className="text-sm">
+                    <span className="font-semibold">Fecha rendida: </span>
+                    <span className="text-gray-700">
+                      {u.fechaRindio
+                        ? u.fechaRindio.toLocaleDateString('es-AR')
+                        : '-'}
+                    </span>
+                  </div>
+                  <div className="text-sm">
+                    <span className="font-semibold">Nota: </span>
+                    <span className="text-gray-700">{u.nota ?? '-'}</span>
+                  </div>
+                  <div className="text-sm">
+                    <span className="font-semibold">Proyecto: </span>
+                    {u.proyectos[0] ? (
+                      <Link
+                        href={`/proyectos/${u.proyectos[0].id}`}
+                        className="text-blue-700 hover:underline"
+                      >
+                        {u.proyectos[0].titulo || 'Ver proyecto'}
+                      </Link>
+                    ) : (
+                      <span className="text-gray-400">Sin proyecto</span>
+                    )}
+                  </div>
+
+                  <div className="mt-3">
+                    {canEditThisUser && (
+                      <EditUserModal
+                        user={{
+                          id: u.id,
+                          nombre: u.nombre,
+                          email: u.email,
+                          celular: u.celular,
+                          egresado: u.egresado,
+                          fechaRindio: u.fechaRindio,
+                          nota: u.nota,
+                          role: u.role,
+                        }}
+                        canEditRole={viewerRole === 'ADMIN'}
+                        onSave={onSaveUsuario}       // ← usar la acción combinada
+                        triggerClassName="w-full"
+                      />
+                    )}
+                  </div>
+
+                  {/* 🔴 ELIMINAR (solo ADMIN, no self, no ADMIN) */}
+                  {viewerRole === 'ADMIN' && u.role !== 'ADMIN' && u.id !== viewerId && (
+                    <ConfirmDelete userId={u.id} compact />
                   )}
                 </div>
-
-                {/* ⬇️ WhatsApp clicable en md */}
-                <div className="text-sm">
-                  <span className="font-semibold">Celular: </span>
-                  {u.celular ? (
-                    <a
-                      href={whatsappLink(u.celular, `Hola ${u.nombre || ''}, te escribo por SICOP`)}
-                      target="_blank"
-                      rel="noopener"
-                      className="text-green-700 hover:underline"
-                    >
-                      {u.celular}
-                    </a>
-                  ) : (
-                    <span className="text-gray-400">—</span>
-                  )}
-                </div>
-
-                <div className="text-sm">
-                  <span className="font-semibold">Rol: </span>
-                  <span className="text-gray-700">{u.role}</span>
-                </div>
-                <div className="text-sm">
-                  <span className="font-semibold">Egresado: </span>
-                  <span className="text-gray-700">
-                    {u.egresado ? 'Sí' : 'No'}
-                  </span>
-                </div>
-                <div className="text-sm">
-                  <span className="font-semibold">Fecha rendida: </span>
-                  <span className="text-gray-700">
-                    {u.fechaRindio
-                      ? u.fechaRindio.toLocaleDateString('es-AR')
-                      : '-'}
-                  </span>
-                </div>
-                <div className="text-sm">
-                  <span className="font-semibold">Nota: </span>
-                  <span className="text-gray-700">{u.nota ?? '-'}</span>
-                </div>
-                <div className="text-sm">
-                  <span className="font-semibold">Proyecto: </span>
-                  {u.proyectos[0] ? (
-                    <Link
-                      href={`/proyectos/${u.proyectos[0].id}`}
-                      className="text-blue-700 hover:underline"
-                    >
-                      {u.proyectos[0].titulo || 'Ver proyecto'}
-                    </Link>
-                  ) : (
-                    <span className="text-gray-400">Sin proyecto</span>
-                  )}
-                </div>
-
-                <div className="mt-3">
-                  <EditUserModal
-                    user={{
-                      id: u.id,
-                      nombre: u.nombre,          
-                      email: u.email,            
-                      celular: u.celular,        
-                      egresado: u.egresado,
-                      fechaRindio: u.fechaRindio,
-                      nota: u.nota,
-                      role: u.role,
-                    }}
-                    canEditRole={viewerRole === 'ADMIN'}
-                    onSave={onSaveUsuario}       // ← usar la acción combinada
-                    triggerClassName="w-full"
-                  />
-                </div>
-
-                {/* 🔴 ELIMINAR (solo ADMIN, no self, no ADMIN) */}
-                {viewerRole === 'ADMIN' && u.role !== 'ADMIN' && u.id !== viewerId && (
-                  <ConfirmDelete userId={u.id} compact />
-                )}
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 
@@ -476,92 +490,99 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
                   </td>
                 </tr>
               ) : (
-                activos.map((u) => (
-                  <tr key={u.id} className="border-t align-middle">
-                    <td className="p-3 font-medium">
-                      <Link href={`/usuarios/${u.id}`} className="text-blue-700 hover:underline">
-                        {u.nombre}
-                      </Link>
-                    </td>
-                    <td className="p-3 whitespace-nowrap max-w-[5.5rem]">
-                      {u.dni ?? '-'}
-                    </td>
-                    <td className='p-3'>
-                      {u.email ? (
-                        <a
-                          href={mailtoLink(u.email, 'SICOP', `Hola ${u.nombre || ''},`)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-700 hover:underline break-all"
-                        >
-                          {u.email}
-                        </a>
-                      ) : '—'}
-                    </td>
-                    <td>
-                      {u.celular ? (
-                        <a
-                          href={whatsappLink(u.celular, `Hola ${u.nombre || ''}, te escribo por SICOP`)}
-                          target="_blank"
-                          rel="noopener"
-                          className="text-green-700 hover:underline"
-                        >
-                          {u.celular}
-                        </a>
-                      ) : '—'}
-                    </td>
-                    <td className="p-3 whitespace-nowrap">{u.role}</td>
-                    <td className="p-3 whitespace-nowrap">
-                      {u.egresado ? 'Sí' : 'No'}
-                    </td>
-                    <td className="p-3 whitespace-nowrap">
-                      {u.fechaRindio
-                        ? new Date(u.fechaRindio).toLocaleDateString('es-AR')
-                        : '-'}
-                    </td>
-                    <td className="p-3 whitespace-nowrap">
-                      {u.nota ?? '-'}
-                    </td>
-                    <td className="p-3">
-                      {u.proyectos[0] ? (
-                        <Link
-                          href={`/proyectos/${u.proyectos[0].id}`}
-                          className="text-blue-700 hover:underline truncate inline-block max-w-[15rem]"
-                          title={u.proyectos[0].titulo || 'Ver proyecto'}
-                        >
-                          {u.proyectos[0].titulo || 'Ver proyecto'}
-                        </Link>
-                      ) : (
-                        <span className="text-gray-400">
-                          Sin proyecto
-                        </span>
-                      )}
-                    </td>
+                activos.map((u) => {
+                  const canEditThisUser =
+                    viewerRole === 'ADMIN' || (viewerRole === 'PROF' && u.role === 'ALUMNO');
 
-                    <td className="p-3">
-                      <div className="flex flexD-col gap-2">
-                        <EditUserModal
-                          user={{
-                            id: u.id,
-                            nombre: u.nombre,          
-                            email: u.email,            
-                            celular: u.celular,        
-                            egresado: u.egresado,
-                            fechaRindio: u.fechaRindio,
-                            nota: u.nota,
-                            role: u.role,
-                          }}
-                          canEditRole={viewerRole === 'ADMIN'}
-                          onSave={onSaveUsuario}
-                        />
-                        {/* 🔴 ELIMINAR (solo ADMIN, no self, no ADMIN) */}
-                        {viewerRole === 'ADMIN' && u.role !== 'ADMIN' && u.id !== viewerId && (
-                          <ConfirmDelete userId={u.id} compact />
+                  return (
+                    <tr key={u.id} className="border-t align-middle">
+                      <td className="p-3 font-medium">
+                        <Link href={`/usuarios/${u.id}`} className="text-blue-700 hover:underline">
+                          {u.nombre}
+                        </Link>
+                      </td>
+                      <td className="p-3 whitespace-nowrap max-w-[5.5rem]">
+                        {u.dni ?? '-'}
+                      </td>
+                      <td className='p-3'>
+                        {u.email ? (
+                          <a
+                            href={mailtoLink(u.email, 'SICOP', `Hola ${u.nombre || ''},`)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-700 hover:underline break-all"
+                          >
+                            {u.email}
+                          </a>
+                        ) : '—'}
+                      </td>
+                      <td>
+                        {u.celular ? (
+                          <a
+                            href={whatsappLink(u.celular, `Hola ${u.nombre || ''}, te escribo por SICOP`)}
+                            target="_blank"
+                            rel="noopener"
+                            className="text-green-700 hover:underline"
+                          >
+                            {u.celular}
+                          </a>
+                        ) : '—'}
+                      </td>
+                      <td className="p-3 whitespace-nowrap">{u.role}</td>
+                      <td className="p-3 whitespace-nowrap">
+                        {u.egresado ? 'Sí' : 'No'}
+                      </td>
+                      <td className="p-3 whitespace-nowrap">
+                        {u.fechaRindio
+                          ? new Date(u.fechaRindio).toLocaleDateString('es-AR')
+                          : '-'}
+                      </td>
+                      <td className="p-3 whitespace-nowrap">
+                        {u.nota ?? '-'}
+                      </td>
+                      <td className="p-3">
+                        {u.proyectos[0] ? (
+                          <Link
+                            href={`/proyectos/${u.proyectos[0].id}`}
+                            className="text-blue-700 hover:underline truncate inline-block max-w-[15rem]"
+                            title={u.proyectos[0].titulo || 'Ver proyecto'}
+                          >
+                            {u.proyectos[0].titulo || 'Ver proyecto'}
+                          </Link>
+                        ) : (
+                          <span className="text-gray-400">
+                            Sin proyecto
+                          </span>
                         )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                      </td>
+
+                      <td className="p-3">
+                        <div className="flex flexD-col gap-2">
+                          {canEditThisUser && (
+                            <EditUserModal
+                              user={{
+                                id: u.id,
+                                nombre: u.nombre,
+                                email: u.email,
+                                celular: u.celular,
+                                egresado: u.egresado,
+                                fechaRindio: u.fechaRindio,
+                                nota: u.nota,
+                                role: u.role,
+                              }}
+                              canEditRole={viewerRole === 'ADMIN'}
+                              onSave={onSaveUsuario}
+                            />
+                          )}
+                          {/* 🔴 ELIMINAR (solo ADMIN, no self, no ADMIN) */}
+                          {viewerRole === 'ADMIN' && u.role !== 'ADMIN' && u.id !== viewerId && (
+                            <ConfirmDelete userId={u.id} compact />
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

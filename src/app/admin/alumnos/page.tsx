@@ -8,6 +8,7 @@ import { aprobarUsuario, rechazarUsuario } from './serverActions';
 import { revalidatePath } from 'next/cache';
 import EditUserModal from './EditUserModal';
 import FiltrosAlumnosClient from './FiltrosAlumnosClient';
+import { mailtoLink, whatsappLink } from '@/lib/contactLinks';
 
 /* ───────────────────────── Server Action: Guardar cambios ───────────────────────── */
 export async function guardarDatosAlumno(formData: FormData) {
@@ -264,13 +265,36 @@ export default async function AdminAlumnosPage({ searchParams }: Search) {
                 <div className="text-sm font-bold">
                   DNI: <span className="text-gray-700">{u.dni ?? '-'}</span>
                 </div>
+                {/* ⬇️ Email clicable en mobile */}
                 <div className="text-sm font-bold">
-                  Email:{' '}
-                  <span className="text-gray-700 break-all">{u.email}</span>
+                  Email{' '}
+                  {u.email ? (
+                    <a
+                      href={mailtoLink(u.email, 'SICOP', `Hola ${u.nombre || ''},`)}
+                      className="text-blue-700 hover:underline break-all"
+                    >
+                      {u.email}
+                    </a>
+                  ) : (
+                    <span className="text-gray-400">—</span>
+                  )}
                 </div>
+
+                {/* ⬇️ WhatsApp clicable en mobile */}
                 <div className="text-sm font-bold">
-                  Celular:{' '}
-                  <span className="text-gray-700">{u.celular ?? '-'}</span>
+                  Celular{' '}
+                  {u.celular ? (
+                    <a
+                      href={whatsappLink(u.celular, `Hola ${u.nombre || ''}, te escribo por SICOP`)}
+                      target="_blank"
+                      rel="noopener"
+                      className="text-green-700 hover:underline"
+                    >
+                      {u.celular}
+                    </a>
+                  ) : (
+                    <span className="text-gray-400">—</span>
+                  )}
                 </div>
                 <div className="text-sm font-bold">
                   Egresado:{' '}
@@ -342,13 +366,38 @@ export default async function AdminAlumnosPage({ searchParams }: Search) {
                   <span className="font-semibold">DNI: </span>
                   <span className="text-gray-700">{u.dni ?? '-'}</span>
                 </div>
+                {/* ⬇️ Email clicable en md */}
                 <div className="text-sm">
                   <span className="font-semibold">Email: </span>
-                  <span className="text-gray-700 break-all">{u.email}</span>
+                  {u.email ? (
+                    <a
+                      href={mailtoLink(u.email, 'SICOP', `Hola ${u.nombre || ''},`)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-700 hover:underline break-all"
+                    >
+                      {u.email}
+                    </a>
+                  ) : (
+                    <span className="text-gray-400">—</span>
+                  )}
                 </div>
+
+                {/* ⬇️ WhatsApp clicable en md */}
                 <div className="text-sm">
                   <span className="font-semibold">Celular: </span>
-                  <span className="text-gray-700">{u.celular ?? '-'}</span>
+                  {u.celular ? (
+                    <a
+                      href={whatsappLink(u.celular, `Hola ${u.nombre || ''}, te escribo por SICOP`)}
+                      target="_blank"
+                      rel="noopener"
+                      className="text-green-700 hover:underline"
+                    >
+                      {u.celular}
+                    </a>
+                  ) : (
+                    <span className="text-gray-400">—</span>
+                  )}
                 </div>
                 <div className="text-sm">
                   <span className="font-semibold">Egresado: </span>
@@ -438,9 +487,29 @@ export default async function AdminAlumnosPage({ searchParams }: Search) {
                     <td className="p-3 whitespace-nowrap">
                       {u.dni ?? '-'}
                     </td>
-                    <td className="p-3 break-all">{u.email}</td>
-                    <td className="p-3 whitespace-nowrap">
-                      {u.celular ?? '-'}
+                    <td className='p-3'>
+                      {u.email ? (
+                        <a
+                          href={mailtoLink(u.email, 'SICOP', `Hola ${u.nombre || ''},`)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-700 hover:underline break-all"
+                        >
+                          {u.email}
+                        </a>
+                      ) : '—'}
+                    </td>
+                    <td>
+                      {u.celular ? (
+                        <a
+                          href={whatsappLink(u.celular, `Hola ${u.nombre || ''}, te escribo por SICOP`)}
+                          target="_blank"
+                          rel="noopener"
+                          className="text-green-700 hover:underline"
+                        >
+                          {u.celular}
+                        </a>
+                      ) : '—'}
                     </td>
                     <td className="p-3 whitespace-nowrap">
                       {u.egresado ? 'Sí' : 'No'}

@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useRef } from 'react';
 import { cambiarPassword } from './serverActions';
-import { Lock } from 'lucide-react';
+import { Lock, Eye, EyeOff } from 'lucide-react';
 
 export default function ChangePasswordForm({
   userId,
@@ -15,6 +15,7 @@ export default function ChangePasswordForm({
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false); // 👈 nuevo estado
   const formRef = useRef<HTMLFormElement | null>(null);
 
   return (
@@ -52,51 +53,75 @@ export default function ChangePasswordForm({
           <input type="hidden" name="userId" value={userId} />
 
           {hasPassword && (
-            <div className="space-y-1">
+            <div className="space-y-1 relative">
               <label className="block text-sm font-medium text-gray-700">
                 Contraseña actual
               </label>
               <input
                 id="cpw-current"
                 name="current"
-                type="password"
-                className="border rounded w-full p-2 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+                type={showPassword ? 'text' : 'password'}
+                className="border rounded w-full p-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
                 placeholder="••••••••"
                 autoComplete="current-password"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-2 bottom-2 text-gray-500 hover:text-gray-700"
+                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+              >
+                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </button>
             </div>
           )}
 
-          <div className="space-y-1">
+          <div className="space-y-1 relative">
             <label className="block text-sm font-medium text-gray-700">
               Nueva contraseña
             </label>
             <input
               id="cpw-next"
               name="next"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               minLength={8}
               required
-              className="border rounded w-full p-2 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+              className="border rounded w-full p-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
               placeholder="Mínimo 8 caracteres"
               autoComplete="new-password"
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-2 bottom-2 text-gray-500 hover:text-gray-700"
+              aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+            >
+              {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+            </button>
           </div>
 
-          <div className="space-y-1">
+          <div className="space-y-1 relative">
             <label className="block text-sm font-medium text-gray-700">
               Confirmar nueva contraseña
             </label>
             <input
               id="cpw-confirm"
               name="confirm"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               minLength={8}
               required
-              className="border rounded w-full p-2 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+              className="border rounded w-full p-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
               placeholder="Repetí la nueva contraseña"
               autoComplete="new-password"
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-2 bottom-2 text-gray-500 hover:text-gray-700"
+              aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+            >
+              {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+            </button>
           </div>
 
           <div className="flex items-center justify-end gap-2">
@@ -122,4 +147,3 @@ export default function ChangePasswordForm({
     </div>
   );
 }
-          

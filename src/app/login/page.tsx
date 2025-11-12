@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -12,6 +13,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false); 
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -30,7 +32,7 @@ export default function LoginPage() {
       }
 
       if (res.error) {
-        setErrorMsg(res.error); // se muestra lo que venga de authorize()
+        setErrorMsg(res.error);
         return;
       }
 
@@ -60,15 +62,31 @@ export default function LoginPage() {
             autoComplete="email"
             required
           />
-          <input
-            className="w-full rounded-lg border border-gray-300 bg-white p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
-            type="password"
-            placeholder="Contraseña"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="current-password"
-            required
-          />
+
+          {/* Campo de contraseña con botón de ojo */}
+          <div className="relative">
+            <input
+              className="w-full rounded-lg border border-gray-300 bg-white p-2 pr-40 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Contraseña"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+            >
+              {showPassword ? (
+                <EyeOff className="h-5 w-5" />
+              ) : (
+                <Eye className="h-5 w-5" />
+              )}
+            </button>
+          </div>
 
           {/* Link a registro */}
           <div className="text-sm text-center">

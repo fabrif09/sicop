@@ -27,6 +27,7 @@ export function FiltersForm({
       action="/admin/logs"
       method="GET"
       className="
+        items-end
         bg-white rounded-lg shadow-sm p-3
         grid gap-2
         [grid-template-columns:repeat(auto-fit,minmax(220px,1fr))]
@@ -37,7 +38,7 @@ export function FiltersForm({
       <select
         name="action"
         defaultValue={initial.action}
-        className="border rounded p-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+        className="border rounded p-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20 h-[2.5rem] "
       >
         <option value="">Todas las acciones</option>
         {Object.keys(AuditAction).map((key) => (
@@ -48,19 +49,19 @@ export function FiltersForm({
       <input
         name="user"
         placeholder="Usuario (nombre/email)"
-        className="border rounded p-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+        className="border rounded p-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20 h-[2.5rem]"
         defaultValue={initial.user}
       />
       <input
         name="target"
         placeholder="Target (id/nombre/email)"
-        className="border rounded p-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+        className="border rounded p-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20 h-[2.5rem]"
         defaultValue={initial.target}
       />
       <input
         name="proyecto"
         placeholder="Proyecto (id/título)"
-        className="border rounded p-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+        className="border rounded p-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20 h-[2.5rem]"
         defaultValue={initial.proyecto}
       />
 
@@ -89,7 +90,7 @@ export function FiltersForm({
         </div>
       </div>
 
-      <div className="col-span-full flex items-center gap-2 justify-end">
+      <div className="flex items-center gap-2 justify-end">
         <button className="btn" type="submit">Filtrar</button>
 
         {/* 🔹 Limpiar: resetea inputs/selects y limpia la URL */}
