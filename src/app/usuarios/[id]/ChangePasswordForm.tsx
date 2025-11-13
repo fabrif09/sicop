@@ -1,3 +1,4 @@
+// src/app/usuarios/[id]/ChangePasswordForm.tsx
 'use client';
 
 import { useState, useTransition, useRef } from 'react';
@@ -15,7 +16,7 @@ export default function ChangePasswordForm({
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const [showPassword, setShowPassword] = useState(false); // 👈 nuevo estado
+  const [showPassword, setShowPassword] = useState(false);
   const formRef = useRef<HTMLFormElement | null>(null);
 
   return (

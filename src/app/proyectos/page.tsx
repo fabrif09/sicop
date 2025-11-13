@@ -52,7 +52,6 @@ export default async function ProyectosPage({ searchParams }: Search) {
       titulo: true,
       alumnoNombre: true,
       fechaCarga: true,
-      // 👇 agregado para poder linkear al perfil
       ownerId: true,
       owner: { select: { id: true, nombre: true } },
     },
@@ -78,7 +77,7 @@ export default async function ProyectosPage({ searchParams }: Search) {
     `;
     total = countRows[0]?.count ?? 0;
 
-    // página (👈 incluimos ownerId para poder linkear al perfil)
+    // página
     proyectos = await prisma.$queryRaw<Row[]>`
       SELECT
         p.id,
@@ -114,7 +113,6 @@ export default async function ProyectosPage({ searchParams }: Search) {
         alumnoNombre: true,
         fechaCarga: true,
         anio: true,
-        // 👇 agregados para linkear
         ownerId: true,
         owner: { select: { id: true, nombre: true } },
       },
@@ -135,7 +133,7 @@ export default async function ProyectosPage({ searchParams }: Search) {
     return `/proyectos${qs ? `?${qs}` : ''}`;
   }
 
-  // helper para renderizar el link al perfil sin cambiar la estética
+  // helper para renderizar el link al perfil
   const OwnerLink = ({ row }: { row: Row }) => {
     const ownerId = row.owner?.id ?? row.ownerId;
     const ownerName = row.owner?.nombre ?? row.alumnoNombre;
@@ -155,7 +153,7 @@ export default async function ProyectosPage({ searchParams }: Search) {
           <h1 className="text-2xl font-bold text-primary">Proyectos</h1>
         </div>
 
-        {/* 🔹 Proyectos pendientes de aprobación (solo Ver) */}
+        {/* Proyectos pendientes de aprobación (solo Ver) */}
         <section className="space-y-3">
           <h2 className="text-xl font-bold text-primary">Proyectos pendientes</h2>
           {pendientes.length === 0 ? (

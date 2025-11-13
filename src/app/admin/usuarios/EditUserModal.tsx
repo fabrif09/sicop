@@ -1,3 +1,4 @@
+// src/app/admin/usuarios/EditUserModal.tsx
 'use client';
 
 import { useRef } from 'react';
@@ -18,7 +19,7 @@ type UserForModal = {
 export default function EditUserModal({
   user,
   canEditRole,
-  onSave,               // ← volvemos a recibir la Server Action por props
+  onSave,               // ← recibir la Server Action por props
   triggerClassName = '',
 }: {
   user: UserForModal;
@@ -61,7 +62,7 @@ export default function EditUserModal({
             </button>
           </div>
 
-          {/* ← usamos la Server Action que viene por props */}
+          {/* ← use usa la Server Action que viene por props */}
           <form action={onSave} className="p-5 space-y-3">
             <input type="hidden" name="id" value={user.id} />
 

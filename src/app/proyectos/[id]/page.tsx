@@ -60,7 +60,7 @@ export default async function ProyectoDetail({
     <main className="min-h-[calc(100vh-13.75rem)] px-4 py-6">
       <div className="max-w-3xl mx-auto space-y-6">
         <div className="bg-white shadow-md rounded-lg p-4 sm:p-5 md:p-6">
-          {/* HEADER (ahora grid responsiva, sin cambiar estética) */}
+          {/* HEADER */}
           <div
             className="
               grid gap-3 items-start

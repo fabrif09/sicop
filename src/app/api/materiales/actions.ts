@@ -73,7 +73,7 @@ export async function registrarMaterial(input: {
   const base = input.key.startsWith('materiales/') ? input.key : `materiales/${input.key}`;
   const safeKey = sanitizeKey(base);
 
-  // ✅ Chequeo de colisión de nombre/clave antes de crear
+  // Chequeo de colisión de nombre/clave antes de crear
   const collision = await prisma.materialCatedra.findFirst({
     where: { key: safeKey },
     select: { id: true, titulo: true },
@@ -124,7 +124,7 @@ export async function registrarMaterial(input: {
 export async function borrarMaterial(id: string) {
   const session = await requireStaff();
 
-  // Traemos datos para el log antes de borrar
+  // Traer datos para el log antes de borrar
   const m = await prisma.materialCatedra.findUnique({
     where: { id },
     select: {
@@ -188,7 +188,7 @@ export async function reemplazarMaterial(input: {
   const safeKey = sanitizeKey(base);
   const newVersion = (m.version ?? 1) + 1;
 
-  // ✅ chequeo de colisión antes del update
+  // chequeo de colisión antes del update
   const collision = await prisma.materialCatedra.findFirst({
     where: { key: safeKey, NOT: { id: input.id } },
     select: { id: true, titulo: true },

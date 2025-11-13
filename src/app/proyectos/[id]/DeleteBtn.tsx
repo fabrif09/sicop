@@ -1,3 +1,4 @@
+// src/app/proyectos/[id]/DeleteBtn.tsx
 'use client';
 import { useRouter } from 'next/navigation';
 import { deleteProyecto } from '../actions';

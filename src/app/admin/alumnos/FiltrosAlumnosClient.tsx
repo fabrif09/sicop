@@ -1,3 +1,4 @@
+// src/app/admin/alumnos/FiltrosAlumnosClient.tsx
 'use client';
 
 import { useState } from 'react';

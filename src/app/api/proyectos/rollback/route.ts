@@ -1,3 +1,4 @@
+// src/app/api/proyectos/rollback/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
@@ -8,7 +9,7 @@ export async function POST(req: NextRequest) {
     await prisma.proyecto.delete({ where: { id: proyectoId } });
     return NextResponse.json({ ok: true });
   } catch (e: any) {
-    // si ya no existe, devolvés ok para no bloquear el cliente
+    // si ya no existe, devuelve ok para no bloquear el cliente
     return NextResponse.json({ ok: true });
   }
 }

@@ -1,3 +1,4 @@
+// src/app/materiales/VerArchivoBtn.tsx
 'use client';
 
 export default function VerArchivoBtn({ keyS3 }: { keyS3: string }) {

@@ -11,7 +11,7 @@ export default async function NuevoProyectoPage() {
 
   if (!email) redirect('/login');
 
-  // Traigo user con id y role (fallback seguro si la session no trae id/role)
+  // Traer user con id y role (fallback seguro si la session no trae id/role)
   const user = await prisma.user.findUnique({
     where: { email },
     select: { id: true, role: true },
@@ -26,15 +26,15 @@ export default async function NuevoProyectoPage() {
 
   // ¿Ya tiene proyecto ACTIVO? (soft-delete friendly)
   const yaTiene = await prisma.proyecto.count({
-    where: { ownerId: user.id, isActive: true }, // 👈 solo activos
+    where: { ownerId: user.id, isActive: true },
   });
 
   if (yaTiene > 0) {
-    // redirige con mensaje (lo leemos en /mi-proyecto)
+    // redirige con mensaje (lee en /mi-proyecto)
     redirect('/mi-proyecto?m=ya_tenes_proyecto');
   }
 
-  // Renderiza el form (client component) con la estética que venimos usando
+  // Renderiza el form (client component) con la estética de la app
   return (
     <main className="p-6 max-w-2xl mx-auto space-y-4">
       <h1 className="text-2xl font-bold text-center text-primary">Nuevo Proyecto</h1>

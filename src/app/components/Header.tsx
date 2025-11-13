@@ -9,7 +9,7 @@ export default async function Header() {
   const role = (session?.user as any)?.role as 'ADMIN' | 'PROF' | 'ALUMNO' | undefined;
   const loggedIn = !!session?.user;
 
-  // 🔹 datos del usuario para el enlace de perfil
+  // datos del usuario para el enlace de perfil
   let userId = (session?.user as any)?.id as string | undefined;
   let userName = (session?.user as any)?.name as string | undefined;
 
@@ -30,7 +30,7 @@ export default async function Header() {
     prisma.proyecto.count({ where: { estado: 'PROPUESTO', isActive: true } }),
   ]);
 
-  // Armamos las entradas de navegación según rol
+  // Armado de las entradas de navegación según rol
   let navItems: { label: string; href: string; badgeCount?: number }[] = [];
 
   if (role === 'ALUMNO') {

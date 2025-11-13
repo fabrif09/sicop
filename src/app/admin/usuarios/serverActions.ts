@@ -103,7 +103,7 @@ export async function registrarDocumentoParaProyecto(formData: FormData) {
     },
   });
 
-  // 🔧 Agregá esto: obtené la session para usar su userId
+  // Obtener la session para usar su userId
   const session = await getServerSession(authOptions);
   const actorId = (session?.user as any)?.id as string | undefined;
   if (!actorId) throw new Error('No autenticado');
@@ -337,7 +337,7 @@ export async function guardarDatosAlumno(formData: FormData) {
   const id = String(formData.get('id') || '');
   if (!id) throw new Error('Falta id');
 
-  // 🔒 Traer el rol del usuario objetivo y aplicar regla de autorización
+  // Traer el rol del usuario objetivo y aplicar regla de autorización
   const target = await prisma.user.findUnique({
     where: { id },
     select: { role: true },

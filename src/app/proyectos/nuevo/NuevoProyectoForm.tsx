@@ -59,7 +59,7 @@ export default function NuevoProyectoForm() {
         throw new Error('Título y descripción son obligatorios');
       }
 
-      // ✔ Validar ambos PDFs obligatorios
+      // Validar ambos PDFs obligatorios
       assertPdf(form.propuesta ?? null, 'la PROPUESTA');
       assertPdf(form.historia ?? null, 'la HISTORIA ACADÉMICA');
 

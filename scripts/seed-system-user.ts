@@ -4,7 +4,7 @@ import { PrismaClient, Role } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  // Ajustá el email si tu tabla User tiene UNIQUE en email y este ya estuviera usado
+  // Ajustar el email si la tabla User tiene UNIQUE en email y este ya estuviera usado
   const SYSTEM_ID = 'system';
   const SYSTEM_EMAIL = 'no-reply@sicop.local';
 

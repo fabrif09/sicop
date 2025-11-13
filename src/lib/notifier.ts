@@ -26,11 +26,11 @@ async function sendEmail(
     html,
   });
 
-  // Si tu enum todavía no tiene ENVIAR_EMAIL, el "as any" lo hace tolerante.
+  
   await prisma.auditLog.create({
     data: {
       action: (AuditAction as any).ENVIAR_EMAIL || ('ENVIAR_EMAIL' as any),
-      // no hay usuario asociado directamente al envío → usamos una relación opcional
+      // no hay usuario asociado directamente al envío → se usa una relación opcional
       user: {
         connectOrCreate: {
           where: { id: 'system' },

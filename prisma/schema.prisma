@@ -50,18 +50,63 @@ model User {
   materialesSubidos   MaterialCatedra[]    @relation("UploaderMateriales")
   comentariosProyecto ProyectoComentario[]
 
-  // 👇 Soft-delete + trazabilidad
+  // Campos para NextAuth (opcionales)
+  emailVerified DateTime?
+  image         String?
+
+  // Relaciones para NextAuth
+  sessions   Session[]
+  accounts   Account[]
+
+  // Soft-delete + trazabilidad
   isDeleted    Boolean   @default(false)
   deletedAt    DateTime?
   deletedById  String?
   deletedBy    User?     @relation("UserDeletedBy", fields: [deletedById], references: [id])
-  // 👇 lado inverso (quiénes fueron eliminados por este usuario)
+  //  lado inverso (quiénes fueron eliminados por este usuario)
   deletedUsers User[]    @relation("UserDeletedBy")
 
-  // 👇 lado inverso para los logs de eliminación (targetUser)
+  //  lado inverso para los logs de eliminación (targetUser)
   auditTargetOf AuditLog[] @relation("AuditTargetUser")
 
 }
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
 
 model Proyecto {
   id              String   @id @default(cuid())
@@ -78,14 +123,14 @@ model Proyecto {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  // NUEVO: flag de actividad (soft-delete)
+  // flag de actividad (soft-delete)
   isActive Boolean @default(true)
 
-  // NUEVO: dueño alumno que creó la propuesta
+  // dueño alumno que creó la propuesta
   ownerId String
   owner   User   @relation("OwnerProyectos", fields: [ownerId], references: [id])
 
-  // NUEVO: quién la aprobó y cuándo
+  // quién la aprobó y cuándo
   aprobadoPorId String?
   aprobadoPor   User?     @relation("AprobadorProyectos", fields: [aprobadoPorId], references: [id])
   aprobadoEn    DateTime?
@@ -114,7 +159,7 @@ model Documento {
   @@unique([proyectoId, tipo, version])
 }
 
-// NUEVO: tabla de auditoría
+// tabla de auditoría
 enum AuditAction {
   CREAR_PROYECTO
   APROBAR_PROYECTO

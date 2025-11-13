@@ -1,3 +1,4 @@
+// src/app/proyectos/actions.ts
 'use server';
 
 import { prisma } from '@/lib/prisma';
@@ -58,7 +59,7 @@ async function crearComentarioProyecto(input: {
   tipo: 'APROBACION' | 'RECHAZO' | 'FEEDBACK';
   texto: string;
 }) {
-  // texto opcional: si viene vacío, no creamos nada
+  // texto opcional: si viene vacío, no crear nada
   if (!input.texto?.trim()) return;
   await prisma.proyectoComentario.create({
     data: {
@@ -188,7 +189,7 @@ export async function registrarDocumento(input: {
   mime: string;
   size: number;
   tipo: 'PROPUESTA' | 'PDF_FINAL' | 'PRESENTACION' | 'OTRO';
-  version?: number; // si no lo mandan, calculo siguiente
+  version?: number; // si no lo mandan, se calcula siguiente
 }) {
   const { userId, role } = await getSessionUser();
 
@@ -243,7 +244,7 @@ if (p.estado === ('PROPUESTO' as any) && !(input.tipo === ('PROPUESTA' as any) |
 
   await logAudit({
     action: AuditAction.SUBIR_PDF,
-    userId, // ya lo obtuviste arriba con getSessionUser()
+    userId,
     proyectoId: input.proyectoId,
     metadata: {
       tipo: input.tipo,
@@ -293,7 +294,7 @@ export async function updateProyecto(input: {
     input.funcionalidades
   );
 
-  // Si viene un estado, derivamos isActive según la regla de negocio
+  // Si viene un estado, deriva isActive según la regla de negocio
   const estadoData = input.estado
     ? {
         estado: input.estado as any,
@@ -355,7 +356,7 @@ export async function aprobarProyecto(proyectoId: string, comentario?: string) {
     select: { id: true },
   });
 
-  // 💬 guardar comentario si vino
+  //  guardar comentario si vino
   await crearComentarioProyecto({
     proyectoId,
     autorId: aprobadorId,
@@ -365,10 +366,10 @@ export async function aprobarProyecto(proyectoId: string, comentario?: string) {
 
   await log('APROBAR_PROYECTO', aprobadorId, p.id);
   await logAudit({
-  action: AuditAction.APROBAR_PROYECTO, // o RECHAZAR_PROYECTO
+  action: AuditAction.APROBAR_PROYECTO,
   userId: aprobadorId,
   proyectoId,
-  metadata: { comentario }, // o motivo
+  metadata: { comentario },
 });
 
   await notifyProjectApproved(proyectoId);

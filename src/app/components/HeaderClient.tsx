@@ -1,3 +1,4 @@
+// src/app/components/HeaderClient.tsx
 'use client';
 
 import Link from 'next/link';
@@ -40,7 +41,7 @@ export default function HeaderClient({
   const [open, setOpen] = useState(false);
   const [animateIn, setAnimateIn] = useState(false);
 
-  // 👇 NUEVO: estado con contadores en vivo
+  // NUEVO: estado con contadores en vivo
   const [liveCounts, setLiveCounts] = useState<{
     pendingUsers: number;
     pendingPropuestas: number;
@@ -59,7 +60,7 @@ export default function HeaderClient({
     else setAnimateIn(false);
   }, [open]);
 
-  // 👇 NUEVO: polling + refresh al recuperar foco
+  // NUEVO: polling + refresh al recuperar foco
   useEffect(() => {
     if (!loggedIn || !(userRole === 'ADMIN' || userRole === 'PROF')) return;
 
@@ -111,7 +112,7 @@ export default function HeaderClient({
     return null;
   };
 
-  // 👇 NUEVO: función que decide el badge actual
+  // NUEVO: función que decide el badge actual
   const currentBadgeFor = (item: NavItem) => {
     if (!liveCounts) return item.badgeCount;
 

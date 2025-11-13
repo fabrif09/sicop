@@ -1,3 +1,4 @@
+// src/app/admin/usuarios/FiltrosUsuariosClient.tsx
 'use client';
 
 import { useState } from 'react';
@@ -36,7 +37,7 @@ export default function FiltrosUsuariosClient({
   // mobile: hidden por default
   const [openMobile, setOpenMobile] = useState(false);
 
-  // armamos la key como ya venías haciendo para forzar remount al limpiar
+  // se arma la key para forzar remount al limpiar
   const formKey = [
     fNombre,
     fDni,
@@ -152,7 +153,7 @@ export default function FiltrosUsuariosClient({
             Filtrar
           </button>
 
-          {/* igual que antes: limpiar la query */}
+          {/* limpiar la query */}
           <Link
             href="/admin/usuarios"
             replace

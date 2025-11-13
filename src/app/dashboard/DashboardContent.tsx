@@ -1,3 +1,4 @@
+// src/app/dashboard/DashboardContent.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -12,7 +13,7 @@ type Props = {
 };
 
 export default function DashboardContent({ email, nombre, rol }: Props) {
-  // mostramos loader breve para dar la sensación de transición
+  // mostrar loader breve para dar la sensación de transición
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -25,7 +26,7 @@ export default function DashboardContent({ email, nombre, rol }: Props) {
   const isAlumno = rol === 'ALUMNO';
 
   if (!ready) {
-    // loader inline con la misma estética que tu loading.tsx
+    // loader inline con la misma estética que loading.tsx
     return (
       <div
         className={`

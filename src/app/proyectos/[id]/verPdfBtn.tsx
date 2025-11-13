@@ -1,16 +1,17 @@
+// src/app/proyectos/[id]/VerPdfBtn.tsx
 'use client';
 
 export default function VerPdfBtn({ keyS3 }: { keyS3: string }) {
   async function handleClick() {
   try {
-    // 1️⃣ Log: avisar al servidor que se abrió un PDF
+    // Log: avisar al servidor que se abrió un PDF
     await fetch('/api/log/pdf', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ key: keyS3 }),
     });
 
-    // 2️⃣ Luego se abre el PDF normalmente
+    // Luego se abre el PDF normalmente
     const r = await fetch('/api/files/presign', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

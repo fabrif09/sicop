@@ -57,14 +57,14 @@ export default async function MaterialesPage() {
 
                   {/* Reemplazar (solo staff) */}
                   {isStaff && (
-                    <div className="col-span-1">
+                    <div className="col-span-1 ml-4">
                       <MaterialUploader replaceId={m.id} replaceLabel="Reemplazar" />
                     </div>
                   )}
 
                   {/* Borrar (solo staff) */}
                   {isStaff && (
-                    <div className="col-span-2 sm:col-span-1">
+                    <div className="col-span-2">
                       <form
                         action={async () => {
                           'use server';

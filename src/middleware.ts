@@ -1,3 +1,4 @@
+// src/middleware.ts
 import { withAuth } from 'next-auth/middleware';
 import { NextResponse } from 'next/server';
 
@@ -15,14 +16,14 @@ export default withAuth(
     }
 
     // Bloquear listados de proyectos a ALUMNO
-    // (permitimos luego /proyectos/nuevo y /proyectos/[id] pero lo validamos del lado servidor)
+    // (se permite luego /proyectos/nuevo y /proyectos/[id] pero se valida del lado servidor)
     const isListadoProyectos =
       pathname === '/proyectos' ||
       pathname === '/proyectos/' ||
       pathname.startsWith('/proyectos/buscar'); 
 
     if (isListadoProyectos && role === 'ALUMNO') {
-      return NextResponse.redirect(new URL('/mi-proyecto', req.url)); // o '/'
+      return NextResponse.redirect(new URL('/mi-proyecto', req.url)); 
     }
 
     return NextResponse.next();

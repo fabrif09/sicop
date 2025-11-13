@@ -5,7 +5,7 @@ import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma'; // 👈 nuevo
+import { prisma } from '@/lib/prisma';
 
 function sanitizeKey(k: string) {
   const clean = k.replace(/[^a-zA-Z0-9._\-\/]/g, '_');

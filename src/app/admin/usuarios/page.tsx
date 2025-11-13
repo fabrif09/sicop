@@ -241,7 +241,7 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
                     DNI: <span className="text-gray-700">{u.dni ?? '-'}</span>
                   </div>
 
-                  {/* ⬇️ Email clicable en mobile */}
+                  {/* Email clicable en mobile */}
                   <div className="text-sm font-bold">
                     Email{' '}
                     {u.email ? (
@@ -256,7 +256,7 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
                     )}
                   </div>
 
-                  {/* ⬇️ WhatsApp clicable en mobile */}
+                  {/* WhatsApp clicable en mobile */}
                   <div className="text-sm font-bold">
                     Celular{' '}
                     {u.celular ? (
@@ -328,7 +328,7 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
                     )}
                   </div>
 
-                  {/* 🔴 ELIMINAR (solo ADMIN, no self, no ADMIN) */}
+                  {/* ELIMINAR (solo ADMIN, no self, no ADMIN) */}
                   {viewerRole === 'ADMIN' && u.role !== 'ADMIN' && u.id !== viewerId && (
                     <ConfirmDelete userId={u.id} />
                   )}
@@ -362,7 +362,7 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
                     <span className="text-gray-700">{u.dni ?? '-'}</span>
                   </div>
 
-                  {/* ⬇️ Email clicable en md */}
+                  {/* Email clicable en md */}
                   <div className="text-sm">
                     <span className="font-semibold">Email: </span>
                     {u.email ? (
@@ -379,7 +379,7 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
                     )}
                   </div>
 
-                  {/* ⬇️ WhatsApp clicable en md */}
+                  {/* WhatsApp clicable en md */}
                   <div className="text-sm">
                     <span className="font-semibold">Celular: </span>
                     {u.celular ? (
@@ -452,7 +452,7 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
                     )}
                   </div>
 
-                  {/* 🔴 ELIMINAR (solo ADMIN, no self, no ADMIN) */}
+                  {/* ELIMINAR (solo ADMIN, no self, no ADMIN) */}
                   {viewerRole === 'ADMIN' && u.role !== 'ADMIN' && u.id !== viewerId && (
                     <ConfirmDelete userId={u.id} compact />
                   )}
@@ -574,7 +574,7 @@ export default async function AdminUsuariosPage({ searchParams }: Search) {
                               onSave={onSaveUsuario}
                             />
                           )}
-                          {/* 🔴 ELIMINAR (solo ADMIN, no self, no ADMIN) */}
+                          {/* ELIMINAR (solo ADMIN, no self, no ADMIN) */}
                           {viewerRole === 'ADMIN' && u.role !== 'ADMIN' && u.id !== viewerId && (
                             <ConfirmDelete userId={u.id} compact />
                           )}

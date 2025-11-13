@@ -1,4 +1,4 @@
-// src/app/usuarios/[id]/serverActions.ts (o donde tengas la action)
+// src/app/usuarios/[id]/serverActions.ts
 'use server';
 
 import { prisma } from '@/lib/prisma';
@@ -68,6 +68,5 @@ export async function cambiarPassword(formData: FormData) {
     metadata: { selfService: true },
   });
 
-  // Si querés revalidar el perfil
   revalidatePath(`/usuarios/${actorId}`);
 }

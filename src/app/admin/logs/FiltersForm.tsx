@@ -1,4 +1,4 @@
-// FiltersForm.tsx
+// src/app/admin/logs/FiltersForm.tsx
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -93,7 +93,7 @@ export function FiltersForm({
       <div className="flex items-center gap-2 justify-end">
         <button className="btn" type="submit">Filtrar</button>
 
-        {/* 🔹 Limpiar: resetea inputs/selects y limpia la URL */}
+        {/* Limpiar: resetea inputs/selects y limpia la URL */}
         <button
           type="button"
           className="text-primary hover:underline px-2 py-1"

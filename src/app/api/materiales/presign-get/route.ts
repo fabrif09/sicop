@@ -1,3 +1,4 @@
+// src/app/api/materiales/presign-get/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getS3 } from '@/lib/s3';
 import { GetObjectCommand } from '@aws-sdk/client-s3';

@@ -1,3 +1,4 @@
+// src/app/admin/usuarios/CrearUsuarioClient.tsx
 'use client';
 
 import { useState, useTransition } from 'react';
@@ -38,9 +39,9 @@ export default function CrearUsuarioClient({ viewerRole }: { viewerRole: string 
     const form = e.currentTarget;
     const fd = new FormData(form);
 
-    // Guardamos campos de proyecto SOLO si ALUMNO y tildó "crear proyecto"
+    // Se guardan campos de proyecto SOLO si ALUMNO y tildó "crear proyecto"
     if (!(role === 'ALUMNO' && crearProyecto)) {
-      // eliminamos campos de proyecto para no ensuciar la action
+      // se eliminan campos de proyecto para no ensuciar la action
       fd.delete('projectTitulo');
       fd.delete('projectDescripcion');
       fd.delete('projectFuncionalidades');

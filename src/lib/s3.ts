@@ -1,3 +1,4 @@
+// src/lib/s3.ts
 import { S3Client } from '@aws-sdk/client-s3';
 
 export function getS3() {

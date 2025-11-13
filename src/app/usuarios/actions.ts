@@ -1,3 +1,4 @@
+// src/app/usuarios/actions.ts
 'use server';
 
 import { getServerSession } from 'next-auth';
@@ -75,7 +76,7 @@ export async function updateAlumnoContact(input: {
   if (typeof input.email === 'string') {
     const email = input.email.trim();
     if (!isValidEmail(email)) throw new Error('Email inválido');
-    // Prisma ya debería tener unique en email. Si choca, tira P2002 (capturable si querés).
+  
     data.email = email.toLowerCase();
   }
 

@@ -1,3 +1,4 @@
+// src/app/admin/alumnos/serverActions.ts
 'use server';
 
 import { prisma } from '@/lib/prisma';
@@ -34,7 +35,6 @@ export async function rechazarUsuario(formData: FormData) {
   const id = String(formData.get('id') || '');
   if (!id) throw new Error('ID requerido');
 
-  // Podés borrar o mantener inactivo. Yo prefiero borrar si está inactivo:
   await prisma.user.delete({ where: { id } });
 
   // (opcional) audit

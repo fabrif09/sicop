@@ -1,3 +1,4 @@
+// src/app/contacto-profes/page.tsx
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -18,7 +19,7 @@ export default async function ContactoProfesPage() {
     );
   }
 
-  // Permitimos que ALUMNO (y staff) vean esta lista
+  // Permitir que ALUMNO (y staff) vean esta lista
   const profes = await prisma.user.findMany({
     where: { role: 'PROF', isActive: true },
     orderBy: [{ nombre: 'asc' }],

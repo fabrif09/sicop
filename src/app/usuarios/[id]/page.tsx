@@ -76,7 +76,7 @@ export default async function PerfilUsuarioPage({
   const activos = u.proyectos.filter(p => p.isActive === true);
   const rechazados = u.proyectos.filter(p => p.isActive === false || p.estado === 'RECHAZADO');
 
-  // ← NUEVO: permiso para cambiar contraseña (propietario o ADMIN)
+  // permiso para cambiar contraseña (propietario o ADMIN)
   const canChangePassword = viewerId === u.id;
 
   return (
@@ -201,7 +201,7 @@ export default async function PerfilUsuarioPage({
           </section>
         )}
 
-        {/* ← NUEVO: Formulario cambiar contraseña (sin alterar estética existente) */}
+        {/* Formulario cambiar contraseña */}
         {canChangePassword && (
           <ChangePasswordForm userId={u.id} hasPassword={!!u.passwordHash} />
         )}

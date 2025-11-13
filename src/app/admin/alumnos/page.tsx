@@ -38,7 +38,7 @@ export async function guardarDatosAlumno(formData: FormData) {
     throw new Error('Nota inválida (0-10)');
   }
 
-  // Solo ADMIN puede cambiar rol (por si querés promoverlo, pero esta vista igual muestra solo ALUMNOS)
+  // Solo ADMIN puede cambiar rol 
   const newRoleRaw = String(formData.get('role') ?? '').trim().toUpperCase();
   const canChangeRole =
     viewerRole === 'ADMIN' && ['ADMIN', 'PROF', 'ALUMNO'].includes(newRoleRaw);
@@ -179,7 +179,7 @@ export default async function AdminAlumnosPage({ searchParams }: Search) {
       fechaRindio: true,
       nota: true,
       proyectos: {
-        where: { isActive: true },          // 👈 solo proyecto ACTIVO
+        where: { isActive: true },          // solo proyecto ACTIVO
         select: { id: true, titulo: true },
         take: 1,
       },
@@ -265,7 +265,7 @@ export default async function AdminAlumnosPage({ searchParams }: Search) {
                 <div className="text-sm font-bold">
                   DNI: <span className="text-gray-700">{u.dni ?? '-'}</span>
                 </div>
-                {/* ⬇️ Email clicable en mobile */}
+                {/* Email clicable en mobile */}
                 <div className="text-sm font-bold">
                   Email{' '}
                   {u.email ? (
@@ -280,7 +280,7 @@ export default async function AdminAlumnosPage({ searchParams }: Search) {
                   )}
                 </div>
 
-                {/* ⬇️ WhatsApp clicable en mobile */}
+                {/* WhatsApp clicable en mobile */}
                 <div className="text-sm font-bold">
                   Celular{' '}
                   {u.celular ? (
@@ -366,7 +366,7 @@ export default async function AdminAlumnosPage({ searchParams }: Search) {
                   <span className="font-semibold">DNI: </span>
                   <span className="text-gray-700">{u.dni ?? '-'}</span>
                 </div>
-                {/* ⬇️ Email clicable en md */}
+                {/* Email clicable en md */}
                 <div className="text-sm">
                   <span className="font-semibold">Email: </span>
                   {u.email ? (
@@ -383,7 +383,7 @@ export default async function AdminAlumnosPage({ searchParams }: Search) {
                   )}
                 </div>
 
-                {/* ⬇️ WhatsApp clicable en md */}
+                {/* WhatsApp clicable en md */}
                 <div className="text-sm">
                   <span className="font-semibold">Celular: </span>
                   {u.celular ? (

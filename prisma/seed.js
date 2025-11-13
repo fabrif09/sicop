@@ -1,18 +1,19 @@
+// prisma/seed.js
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  // ⚙️ Datos del admin por defecto
+  // Datos del admin por defecto
   const email = 'admin@sicop.local';
   const password = 'admin123';
   const nombre = 'Administrador SICOP';
 
-  // 🔒 Generar hash seguro de la contraseña
+  // Generar hash seguro de la contraseña
   const hash = await bcrypt.hash(password, 10);
 
-  // 🧩 Crear o actualizar el admin
+  // Crear o actualizar el admin
   await prisma.user.upsert({
     where: { email },
     update: {
