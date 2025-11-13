@@ -1,291 +1,226 @@
-📘 README_DEPLOY.md – Guía de Deploy para SICOP (Producción)
 
-Este documento explica cómo instalar, configurar y ejecutar SICOP en un entorno de producción dentro de la universidad.
-Está pensado para el equipo técnico o el área de sistemas.
+# 🚀 SICOP – Sistema de Control de Proyectos  
+## 📘 Documentación de Deploy y Requisitos Técnicos
 
-📌 1. Requisitos del Sistema
-✔ Hardware mínimo recomendado
-Recurso	Recomendado	Mínimo
-CPU	2–4 vCPU	2 vCPU
-RAM	8 GB	4 GB
-Disco	100 GB SSD	40 GB
-Red	IP fija interna o pública	—
-📌 2. Software Necesario (versiones exactas)
+Este documento reúne **toda la información completa** para instalar, correr y mantener el sistema **SICOP**.
 
-Instalar en el servidor Linux (Ubuntu recomendado):
+---
 
-Software	Versión recomendada	Notas
-Ubuntu Server	22.04 LTS	también funciona en 20.04
-Docker	27.x	paquete oficial de Docker
-Docker Compose	v2.x	integrado a Docker (plugin)
-Node.js	v20.x LTS	solo necesario si NO se dockeriza Next.js
-Nginx	1.18+	reverse proxy + HTTPS
-Certbot	última versión	para obtener certificados SSL
-Git	2.x	clonar el repo
-📌 3. Servicios Dockerizados
+# 🧩 1. Descripción General del Sistema
 
-SICOP usa los siguientes servicios dentro de Docker:
+SICOP es una plataforma web desarrollada con **Next.js Full Stack**, **Prisma ORM** y **PostgreSQL**, destinada a la gestión integral de proyectos finales de alumnos, permitiendo:
 
-Servicio	Imagen	Puerto	Descripción
-PostgreSQL 15	postgres:15	5432	Base de datos
-Adminer	adminer:latest	8080	UI para administrar DB
-MinIO (S3)	minio/minio:latest	9000 / 9001	Almacenamiento de PDFs
-(Opcional) Next.js	imagen personalizada	3000	App web
+- Carga de proyectos (PDF) por parte de alumnos o profesores.
+- Seguimiento del estado del proyecto (pendiente, aprobado, rechazado).
+- Registro de acciones en un sistema de **auditoría (logs)**.
+- Gestión de usuarios: alumnos, profesores y administradores.
+- Notificaciones (email).
+- Panel administrativo para la cátedra.
 
-Tu docker-compose.yml actual ya levanta Postgres, Adminer y MinIO.
+---
 
-📌 4. Directorio de instalación recomendado
+# 💻 2. Tecnologías y Versiones Utilizadas
 
-En el servidor:
+## 🧠 2.1 Entorno General
 
-/opt/sicop
+| Componente | Versión |
+|-------------|----------|
+| **Node.js** | 22.14.0 |
+| **npm** | 10.9.2 |
+| **Docker Engine** | 28.1.1 |
+| **Docker Compose (spec)** | v3 |
+| **PostgreSQL (contenedor)** | 15.x |
+| **Next.js** | 15.5.2 |
+| **React** | 19.1.0 |
+| **React DOM** | 19.1.0 |
+| **Prisma ORM** | 6.15.0 |
+| **TypeScript** | 5.x |
+| **TailwindCSS** | 4.1.13 |
+| **Autenticación** | NextAuth 4.24.11 |
+| **Iconos UI** | lucide-react 0.552.0 |
+| **Hashing** | bcryptjs 3.0.2 |
+| **Emails** | Mailtrap + Nodemailer |
+| **Almacenamiento de Archivos** | MinIO / S3 compatible |
 
+---
 
-Contenido sugerido:
+# ⚙️ 3. Dependencias del Proyecto
 
-/opt/sicop/
-  ├── app/                 (código Next.js)
-  ├── docker/              (docker-compose + volúmenes)
-  ├── .env.production
-  └── README_DEPLOY.md
+## 3.1 Dependencias Principales (package.json)
 
-📌 5. Volúmenes Persistentes (importante)
+| Paquete | Versión |
+|---------|---------|
+| next | 15.5.2 |
+| react | 19.1.0 |
+| react-dom | 19.1.0 |
+| @prisma/client | 6.15.0 |
+| prisma | 6.15.0 |
+| next-auth | 4.24.11 |
+| tailwindcss | 4.1.13 |
+| bcryptjs | 3.0.2 |
+| lucide-react | 0.552.0 |
+| nodemailer | 6.10.1 |
+| @aws-sdk/client-s3 | 3.886.0 |
+| @aws-sdk/s3-request-presigner | 3.886.0 |
+| postcss | 8.5.6 |
+| autoprefixer | 10.4.21 |
 
-Para no perder datos, se recomienda:
+---
 
-volumes:
-  postgres_data:
-  minio_data:
+## 3.2 Dependencias de Desarrollo
 
+| Paquete | Versión |
+|----------|---------|
+| eslint | 9.x |
+| eslint-config-next | 15.5.2 |
+| @eslint/eslintrc | 3.x |
+| @types/node | 20.x |
+| @types/react | 19.x |
+| @types/react-dom | 19.x |
+| @types/bcryptjs | 2.4.6 |
+| @types/nodemailer | 7.0.3 |
 
-Estos volúmenes deben estar montados en disco y respaldados periódicamente.
+---
 
-📌 6. Variables de Entorno (Producción)
+# 🐳 4. Servicios con Docker
 
-Crear el archivo:
+El sistema utiliza los siguientes contenedores:
 
-.env.production
+| Servicio | Imagen | Puertos | Uso |
+|----------|---------|---------|-----|
+| **PostgreSQL** | postgres:15 | 5432 | Base de datos |
+| **Adminer** | adminer:latest | 8080 | Admin de BD |
+| **MinIO** | minio/minio | 9000 / 9090 | Almacenamiento de PDFs |
+| **Aplicación SICOP** | local | 3000 | Next.js |
 
+---
 
-Contenido estándar (adaptar según la infraestructura):
+# 🔧 5. Variables de Entorno
 
-# ===== BASE DE DATOS =====
-DATABASE_URL="postgresql://sicop_user:password@postgres:5432/sicopdb?schema=public"
+Crear un archivo:  
+`./.env.local`
 
-# ===== NextAuth =====
-NEXTAUTH_URL="https://sicop.universidad.edu"
-NEXTAUTH_SECRET="_GENERAR_UNA_SECRET_SEGURA_"
+```bash
+DATABASE_URL="postgresql://postgres:<password>@localhost:5432/sicop"
+NEXTAUTH_SECRET="<clave_secreta>"
+NEXTAUTH_URL="http://localhost:3000"
 
-# ===== SMTP real =====
-SMTP_HOST="smtp.universidad.edu"
+# Mailtrap (testing)
+SMTP_HOST=sandbox.smtp.mailtrap.io
 SMTP_PORT=587
-SMTP_USER="sicop@universidad.edu"
-SMTP_PASS="contraseñaReal"
-SMTP_FROM="SICOP <sicop@universidad.edu>"
+SMTP_USER=<user>
+SMTP_PASS=<pass>
 
-# ===== MinIO (S3) =====
-S3_ENDPOINT="http://minio:9000"
-S3_BUCKET="proyectos"
-S3_ACCESS_KEY="minioadmin"
-S3_SECRET_KEY="minioadmin"
-S3_REGION="us-east-1"
+# MinIO / S3
+OBJECT_ENDPOINT="http://localhost:9000"
+OBJECT_REGION="us-east-1"
+OBJECT_ACCESS_KEY="<key>"
+OBJECT_SECRET_KEY="<secret>"
+OBJECT_BUCKET="sicop-projects"
+OBJECT_FORCE_PATH=true
+```
 
-# ===== Config MinIO Panel =====
-MINIO_ROOT_USER="minioadmin"
-MINIO_ROOT_PASSWORD="minioadmin"
+---
 
+# 🚀 6. Instalación y Puesta en Marcha
 
-⚠ IMPORTANTE:
-NEXTAUTH_SECRET debe ser generado así:
+## 6.1 Requisitos
 
-openssl rand -base64 32
+✔ **Docker Desktop 28+**  
+✔ **Node.js 22+**  
+✔ **Git**  
+✔ **Navegador moderno** (Chrome recomendado)  
 
-📌 7. Deploy Paso por Paso (para Infraestructura)
-✅ 1) Clonar el repositorio
-cd /opt
-sudo mkdir sicop
-sudo chown $USER:$USER sicop
+---
+
+## 6.2 Pasos de despliegue
+
+### 1️⃣ Clonar el repositorio
+```bash
+git clone https://github.com/fabrif09/sicop
 cd sicop
-git clone https://github.com/tu-repo.git app
+```
 
-✅ 2) Crear archivo .env.production
-cp app/.env.example .env.production
-nano .env.production
+### 2️⃣ Configurar variables
+Crear archivo `.env.local` con los valores anteriores.
 
-
-Completar con los valores reales.
-
-✅ 3) Levantar la base de datos + MinIO
-
-Desde /opt/sicop/app o donde esté el compose:
-
+### 3️⃣ Levantar servicios Docker
+```bash
 docker compose up -d
+```
 
+### 4️⃣ Ejecutar migraciones Prisma
+```bash
+npx prisma migrate dev
+```
 
-Verificar:
-
-docker ps
-
-✅ 4) Construir y ejecutar la app Next.js
-Opción A – Dockerizar Next.js (recomendada)
-
-Crear Dockerfile:
-
-FROM node:20-alpine
-WORKDIR /app
-
-COPY package.json package-lock.json ./
-RUN npm install --production
-
-COPY . .
-RUN npm run build
-
-EXPOSE 3000
-CMD ["npm", "start"]
-
-
-Agregar al docker-compose.yml:
-
-services:
-  app:
-    build: .
-    ports:
-      - "3000:3000"
-    env_file:
-      - ../.env.production
-    depends_on:
-      - postgres
-      - minio
-
-
-Y ejecutar:
-
-docker compose up -d --build
-
-Opción B – Ejecutar Next.js fuera de Docker
-
-Instalar Node 20:
-
-sudo apt install nodejs npm
-
-
-Instalar dependencias:
-
-cd /opt/sicop/app
+### 5️⃣ Iniciar el sistema
+```bash
 npm install
-npm run build
-npm run start
+npm run dev
+```
 
-✅ 5) Configurar Nginx + HTTPS
+Abrir en el navegador:  
+👉 **http://localhost:3000**
 
-Archivo ejemplo:
+---
 
-/etc/nginx/sites-available/sicop
+# 📁 7. Arquitectura General
 
+- **Next.js App Router** con Server Components.
+- **Prisma ORM** para consultas SQL fuertemente tipadas.
+- **PostgreSQL** como base de datos estable y relacional.
+- **MinIO / S3** para almacenamiento de PDFs.
+- **NextAuth** con roles *(ADMIN, PROF, ALUMNO)*.
+- **Auditoría** mediante tabla `AuditLog`.
+- **Filtros avanzados**, logs, paginación, búsqueda.
+- **Notificaciones** (Mailtrap en desarrollo / SMTP en producción).
 
-Contenido:
+---
 
-server {
-    server_name sicop.universidad.edu;
+# 🔐 8. Roles del Sistema
 
-    location / {
-        proxy_pass http://localhost:3000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-}
+| Rol | Permisos |
+|------|-----------|
+| **ADMIN** | Acceso total, crear usuarios, aprobar/rechazar proyectos |
+| **PROF** | Crear alumnos, subir proyectos de alumnos, aprobar estados |
+| **ALUMNO** | Subir proyecto, ver estado, recibir notificaciones |
 
+---
 
-Activar:
+# 📦 9. Datos Almacenados
 
-sudo ln -s /etc/nginx/sites-available/sicop /etc/nginx/sites-enabled/
-sudo systemctl restart nginx
+### Tabla `User`
+- nombre, email, dni, egresado, fechaRindio, nota
+- role, passwordHash, createdAt
 
+### Tabla `Proyecto`
+- titulo, pdfKey, estado, alumnoId, feedback
 
-Agregar HTTPS:
+### Tabla `AuditLog`
+- acción, usuario, target, proyecto, metadata, fecha
 
-sudo certbot --nginx -d sicop.universidad.edu
+---
 
-📌 8. Sistema de Emails (Producción)
+# 📚 10. Resumen de Instalación (versión corta)
 
-Para producción se necesita:
+```
+docker compose up -d
+npx prisma migrate dev
+npm install
+npm run dev
+http://localhost:3000
+```
 
-✔ SMTP real de la universidad
-✔ Configuración de SPF/DKIM/DMARC
-✔ Cuenta propia: sicop@universidad.edu
-✔ Puerto 587 (TLS)
+✔ Listo para usar en la cátedra.  
+✔ Funciona igual en cualquier red Wi-Fi.  
+✔ No depende de servicios externos (salvo Mailtrap opcional).  
 
-El sistema actual funciona igual, solo se cambia la configuración del .env.
+---
 
-📌 9. Sistema de PDFs con MinIO
-✔ Requisitos para producción
+# 🎓 11. Contacto y Mantenimiento
 
-Volumen persistente minio_data
+Autor: **Fabrizio Fasoli**  
+Proyecto Final – Universidad Católica de Cuyo    
 
-Acceso restringido (ideal firewall interno)
-
-HTTPS si se expone público
-
-Backup diario de:
-
-minio_data
-
-Base de datos Postgres
-
-El código ya está preparado para usar MinIO en producción.
-
-📌 10. Backups (obligatorio en entorno académico)
-Base de datos:
-docker exec postgres pg_dump -U sicop_user sicopdb > backup.sql
-
-MinIO (archivos PDF):
-
-Usar:
-
-mc mirror minio/proyectos /backups/proyectos
-
-
-(O usar snapshots del servidor)
-
-📌 11. Actualizaciones del sistema
-
-Para actualizar el sistema:
-
-cd /opt/sicop/app
-git pull
-docker compose down
-docker compose up -d --build
-
-📌 12. Checklist para producción (resumen)
-Infraestructura
-
- Servidor Linux activo
-
- Docker + Compose instalados
-
- Nginx + HTTPS configurado
-
- Dominios apuntados correctamente
-
-App
-
- .env.production listo
-
- DB y MinIO con volúmenes persistentes
-
- App Next.js build final
-
- SMTP real configurado
-
-Seguridad
-
- Contraseñas seguras
-
- Puertos internos cerrados (Adminer / MinIO)
-
- Backups configurados
-
-📌 13. Contacto técnico (para universidad)
-
-Este proyecto fue desarrollado en Next.js + PostgreSQL + MinIO y es totalmente portable.
-Soporta cualquier infraestructura universal: Docker, VPS, servidores de facultad, etc.
+--- 
