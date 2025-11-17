@@ -28,7 +28,7 @@ export default function HeaderClient({
   headerClassName,
   userId,
   userName,
-  userRole, // + NUEVO
+  userRole, 
 }: {
   navItems: NavItem[];
   loggedIn: boolean;
@@ -36,7 +36,7 @@ export default function HeaderClient({
   headerClassName: string;
   userId?: string;
   userName?: string;
-  userRole?: 'ADMIN' | 'PROF' | 'ALUMNO'; // + NUEVO
+  userRole?: 'ADMIN' | 'PROF' | 'ALUMNO'; 
 }) {
   const [open, setOpen] = useState(false);
   const [animateIn, setAnimateIn] = useState(false);
@@ -83,7 +83,7 @@ export default function HeaderClient({
 
     // primer tiro + cada 5 s + al volver el foco
     fetchCounts();
-    intervalId = window.setInterval(fetchCounts, 5000);
+    intervalId = window.setInterval(fetchCounts, 8000);
     const onFocus = () => fetchCounts();
     window.addEventListener('focus', onFocus);
 
@@ -112,7 +112,7 @@ export default function HeaderClient({
     return null;
   };
 
-  // NUEVO: función que decide el badge actual
+  // función que decide el badge actual
   const currentBadgeFor = (item: NavItem) => {
     if (!liveCounts) return item.badgeCount;
 
@@ -170,18 +170,7 @@ export default function HeaderClient({
                 </Link>
               );
             })}
-            {/* visible solo para alumnos */}
-            {loggedIn && userRole === 'ALUMNO' && (
-              <Link
-                href="/contacto-profes"
-                className="text-sm text-white hover:underline inline-flex items-center gap-1.5"
-                title="Profes de la cátedra"
-              >
-                <BookUser className="h-4 w-4" />
-                <span>Profes de la cátedra</span>
-              </Link>
-            )}
-
+            
             {!loggedIn ? (
               <Link
                 href="/login"
@@ -262,19 +251,7 @@ export default function HeaderClient({
                   </Link>
                 );
               })}
-              {loggedIn && userRole === 'ALUMNO' && (
-                <Link
-                  href="/contacto-profes"
-                  onClick={closeMenu}
-                  className="flex items-center justify-between rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50"
-                >
-                  <span className="inline-flex items-center gap-1.5">
-                    <BookUser className="h-4 w-4 text-[#1e40af]" />
-                    Profes de la cátedra
-                  </span>
-                </Link>
-              )}
-
+    
               {loggedIn && userId && (
                 <Link
                   href={`/usuarios/${userId}`}
