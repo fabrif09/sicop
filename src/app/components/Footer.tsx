@@ -1,5 +1,7 @@
 // src/app/components/Footer.tsx
 
+import { mailtoLink } from "@/lib/contactLinks"
+
 export default function Footer() {
   return (
     <footer className=" bg-[#1e40afab]  mt-8">
@@ -19,6 +21,15 @@ export default function Footer() {
         {/* crédito autor */}
         <div className="text-xs text-gray-200 leading-relaxed">
           <div>Desarrollado por <span className="font-medium text-gray-200">Fabrizio Fasoli</span></div>
+          <div>
+            Contacto:{" "}
+            <a 
+              href="mailto:ffasoli9@gmail.com"
+              className="underline text-gray-100 hover:text-white"
+            >
+              ffasoli9@gmail.com
+            </a>
+          </div>
           <div className="text-[10px] text-gray-200">
             © 2025 SICOP — Todos los derechos reservados
           </div>

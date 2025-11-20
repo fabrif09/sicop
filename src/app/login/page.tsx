@@ -97,6 +97,12 @@ export default function LoginPage() {
             >
               Crear cuenta
             </Link>
+            <Link
+              href="/recuperar-contrasena"
+              className="text-primary hover:underline block"
+            >
+              ¿Olvidaste tu contraseña?
+            </Link>
           </div>
 
           {/* Mensajes de error */}
