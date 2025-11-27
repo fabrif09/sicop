@@ -563,7 +563,7 @@ export default async function AdminAlumnosPage({ searchParams }: Search) {
             {/* Botón anterior */}
             {page > 1 && (
               <Link
-                href={`/admin/usuarios?page=${page - 1}`}
+                href={`/admin/alumnos?page=${page - 1}`}
                 className="px-3 py-1 border rounded bg-white hover:bg-gray-100"
               >
                 {'<-'} Anterior
@@ -586,7 +586,7 @@ export default async function AdminAlumnosPage({ searchParams }: Search) {
               return (
                 <Link
                   key={n}
-                  href={`/admin/usuarios?${params.toString()}`}
+                  href={`/admin/alumnos?${params.toString()}`}
                   className={`px-3 py-1 border rounded ${
                     active
                       ? 'bg-primary text-white'
@@ -601,7 +601,7 @@ export default async function AdminAlumnosPage({ searchParams }: Search) {
             {/* Botón siguiente */}
             {page < totalPages && (
               <Link
-                href={`/admin/usuarios?page=${page + 1}`}
+                href={`/admin/alumnos?page=${page + 1}`}
                 className="px-3 py-1 border rounded bg-white hover:bg-gray-100"
               >
                 Siguiente {'->'}

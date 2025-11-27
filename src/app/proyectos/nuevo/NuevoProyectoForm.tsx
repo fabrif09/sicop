@@ -31,7 +31,7 @@ export default function NuevoProyectoForm() {
   function assertPdf(file: File | null, label: string) {
     if (!file) throw new Error(`Adjuntá el PDF de ${label}`);
     if (file.type !== 'application/pdf') throw new Error(`${label}: solo PDF`);
-    if (file.size > 15 * 1024 * 1024) throw new Error(`${label}: supera 15MB`);
+    if (file.size > 50 * 1024 * 1024) throw new Error(`${label}: supera 50MB`);
   }
 
   async function uploadWithPresign(key: string, file: File, proyectoId: string) {

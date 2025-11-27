@@ -204,7 +204,7 @@ export async function registrarDocumento(input: {
   if (!(isOwnerAlumno || isStaff)) throw new Error('No autorizado');
 
   if (input.mime !== 'application/pdf') throw new Error('Solo PDF');
-  if (input.size > 15 * 1024 * 1024) throw new Error('PDF > 15MB');
+  if (input.size > 50 * 1024 * 1024) throw new Error('PDF > 50MB');
 
   // Regla de negocio:
   //   - Si el proyecto está PROPUESTO => solo PROPUESTA.

@@ -72,8 +72,8 @@ export default function CrearUsuarioClient({ viewerRole }: { viewerRole: string 
           if (finalFile.type !== 'application/pdf') {
             throw new Error('El archivo final debe ser PDF');
           }
-          if (finalFile.size > 20 * 1024 * 1024) {
-            throw new Error('El PDF final supera 20MB');
+          if (finalFile.size > 50 * 1024 * 1024) {
+            throw new Error('El PDF final supera 50MB');
           }
 
           // Presign PUT
@@ -247,7 +247,7 @@ export default function CrearUsuarioClient({ viewerRole }: { viewerRole: string 
                   <input
                     type="file" accept="application/pdf"
                     onChange={(e) => setFinalFile(e.target.files?.[0] ?? null)}
-                    className="block mt-1"
+                    className="mt-1 text-sm text-gray-700 file:mr-3 file:py-2 file:px-3 file:rounded file:border-0 file:bg-blue-600 file:text-white hover:file:bg-blue-700 hover:file:cursor-pointer w-full"
                     disabled={isPending}
                   />
                   {finalFile && (

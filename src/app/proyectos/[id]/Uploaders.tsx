@@ -28,7 +28,7 @@ export default function Uploaders({ proyectoId, estado, isOwner, isStaff }: Prop
       kind === 'PRESENTACION' ? filePres  : fileProp;
     if (!file) return alert('Seleccioná un PDF');
     if (file.type !== 'application/pdf') return alert('Solo PDF');
-    if (file.size > 15 * 1024 * 1024) return alert('PDF > 15MB');
+    if (file.size > 50 * 1024 * 1024) return alert('PDF > 50MB');
 
     try {
       setBusy(kind === 'PDF_FINAL' ? 'FINAL' : kind === 'PRESENTACION' ? 'PRES' : 'PROP');

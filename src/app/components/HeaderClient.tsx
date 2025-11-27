@@ -12,7 +12,8 @@ import {
   Users,
   LogIn,
   CircleUser,
-  BookUser
+  BookUser,
+  HelpCircle, // 👈 AGREGADO
 } from 'lucide-react';
 
 type NavItem = {
@@ -28,7 +29,7 @@ export default function HeaderClient({
   headerClassName,
   userId,
   userName,
-  userRole, 
+  userRole,
 }: {
   navItems: NavItem[];
   loggedIn: boolean;
@@ -36,7 +37,7 @@ export default function HeaderClient({
   headerClassName: string;
   userId?: string;
   userName?: string;
-  userRole?: 'ADMIN' | 'PROF' | 'ALUMNO'; 
+  userRole?: 'ADMIN' | 'PROF' | 'ALUMNO';
 }) {
   const [open, setOpen] = useState(false);
   const [animateIn, setAnimateIn] = useState(false);
@@ -81,7 +82,7 @@ export default function HeaderClient({
       }
     };
 
-    // primer tiro + cada 5 s + al volver el foco
+    // primer tiro + cada 8 s + al volver el foco
     fetchCounts();
     intervalId = window.setInterval(fetchCounts, 8000);
     const onFocus = () => fetchCounts();
@@ -148,8 +149,12 @@ export default function HeaderClient({
                 </h1>
               </div>
 
-              <span className="font-heading tracking-wide text-white md:hidden">SICOP</span>
-              <span className="font-heading tracking-wide text-white hidden lg:inline">SICOP</span>
+              <span className="font-heading tracking-wide text-white md:hidden">
+                SICOP
+              </span>
+              <span className="font-heading tracking-wide text-white hidden lg:inline">
+                SICOP
+              </span>
             </Link>
           </div>
 
@@ -170,7 +175,18 @@ export default function HeaderClient({
                 </Link>
               );
             })}
-            
+
+            {/* 👇 AGREGADO: link Manual de usuario solo si NO hay sesión (desktop) */}
+            {!loggedIn && (
+              <Link
+                href="/manual-usuario"
+                className="text-sm text-white hover:underline inline-flex items-center gap-1.5"
+              >
+                <HelpCircle className="h-4 w-4" />
+                <span>Manual de usuario</span>
+              </Link>
+            )}
+
             {!loggedIn ? (
               <Link
                 href="/login"
@@ -251,7 +267,7 @@ export default function HeaderClient({
                   </Link>
                 );
               })}
-    
+
               {loggedIn && userId && (
                 <Link
                   href={`/usuarios/${userId}`}
@@ -261,6 +277,20 @@ export default function HeaderClient({
                   <span className="inline-flex items-center gap-1.5">
                     <CircleUser className="h-4 w-4 text-[#1e40af]" />
                     {userName || 'Mi perfil'}
+                  </span>
+                </Link>
+              )}
+
+              {/* 👇 AGREGADO: link Manual de usuario solo si NO hay sesión (mobile) */}
+              {!loggedIn && (
+                <Link
+                  href="/manual-usuario"
+                  onClick={closeMenu}
+                  className="flex items-center justify-between rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50"
+                >
+                  <span className="inline-flex items-center gap-1.5">
+                    <HelpCircle className="h-4 w-4 text-[#1e40af]" />
+                    Manual de usuario
                   </span>
                 </Link>
               )}

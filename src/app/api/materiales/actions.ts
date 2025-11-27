@@ -66,8 +66,8 @@ export async function registrarMaterial(input: {
   const session = await requireStaff();
   if (!input.titulo?.trim()) throw new Error('Título requerido');
   assertAllowedMime(input.mime);
-  if (input.size <= 0 || input.size > 20 * 1024 * 1024)
-    throw new Error('Archivo demasiado grande (máx 20MB)');
+  if (input.size <= 0 || input.size > 50 * 1024 * 1024)
+    throw new Error('Archivo demasiado grande (máx 50MB)');
 
   // Forzar prefix
   const base = input.key.startsWith('materiales/') ? input.key : `materiales/${input.key}`;
