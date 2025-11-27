@@ -196,7 +196,7 @@ export default async function PerfilUsuarioPage({
               <button className="btn">Guardar</button>
             </form>
             <p className="text-xs text-gray-500 mt-2">
-              Si necesitás cambiar tu email, pedí ayuda a un profesor.
+              Si necesitás cambiar tu email, pedí ayuda a un profesor/admin.
             </p>
           </section>
         )}

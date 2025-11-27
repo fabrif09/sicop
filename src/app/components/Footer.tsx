@@ -25,6 +25,8 @@ export default function Footer() {
             Contacto:{" "}
             <a 
               href="mailto:ffasoli9@gmail.com"
+              target="_blank"
+              rel="noopener noreferrer"
               className="underline text-gray-100 hover:text-white"
             >
               ffasoli9@gmail.com
